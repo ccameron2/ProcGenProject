@@ -45,13 +45,13 @@ public:
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeX = 100;
+		int GridSizeX = 5000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeY = 100;
+		int GridSizeY = 5000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 1;
+		int GridSizeZ = 1000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int32 SectionIndex;
