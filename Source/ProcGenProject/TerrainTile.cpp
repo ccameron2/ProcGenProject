@@ -1,7 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "KismetProceduralMeshLibrary.h"
+// Fill out your copyright notice in the DescrSiption page of Project Settings.
 #include "TerrainTile.h"
+#include <functional>
+#include "KismetProceduralMeshLibrary.h"
+#include "Generators/MarchingCubes.h"
+#include "HAL/Runnable.h"
+
 // Sets default values
 ATerrainTile::ATerrainTile()
 {
@@ -16,12 +19,35 @@ ATerrainTile::ATerrainTile()
 void ATerrainTile::BeginPlay()
 {
 	Super::BeginPlay();
-	CreateMesh();
+
+	//CreateMesh();
+	FMarchingCubes MarchingCubes;
+	FAxisAlignedBox3d BoundingBox(FVector3d{0,0,0}, FVector3d{double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
+	MarchingCubes.Bounds = BoundingBox;
+	MarchingCubes.bParallelCompute = true;
+	MarchingCubes.CellDimensions = FVector3i{ 100,100,100 };
+	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
+	MarchingCubes.Generate();
+
+	//Convert FIndex3i to Int32
+	for (int i = 0; i < MarchingCubes.Triangles.Num(); i++)
+	{
+		Triangles.Push(int32(MarchingCubes.Triangles[i].A));
+		Triangles.Push(int32(MarchingCubes.Triangles[i].B));
+		Triangles.Push(int32(MarchingCubes.Triangles[i].C));
+	}
+	Vertices = TArray<FVector>(MarchingCubes.Vertices);
+	Normals = TArray<FVector>(MarchingCubes.Normals);
+	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
+	ProcMesh->ClearAllMeshSections();
+	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+
 }
 
 void ATerrainTile::CreateMesh()
 {
 	ProcMesh->ClearAllMeshSections();
+	Vertices.Empty();
 	for (int i = 0; i < GridSizeX; i++)
 	{
 		for (int j = 0; j < GridSizeY; j++)
@@ -33,7 +59,7 @@ void ATerrainTile::CreateMesh()
 	for (int i = 0; i < Vertices.Num(); i++)
 	{
 		counter += FMath::FRand();
-		Vertices[i].Z = Scale * FMath::PerlinNoise1D(counter);
+		Vertices[i].Z = Scale * FMath::PerlinNoise2D(FVector2D{ Vertices[i].X, Vertices[i].Y });/* FractalBrownianMotion(Vertices[i].X, Vertices[i].Y, Vertices[i].Z, NumOctaves, Lacunarity, Gain); */
 	}
 	AssignTriangles();
 	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
@@ -54,6 +80,33 @@ void ATerrainTile::AssignColours()
 		}
 	}
 }
+
+double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
+{
+	
+	return double(FractalBrownianMotion(FVector(perlinInput)));
+}
+
+float ATerrainTile::FractalBrownianMotion(FVector fractalInput)
+{
+	float NumOctaves = 8;
+
+	float Lacunarity = 2;
+
+	float Gain = 0.5;
+
+	float Sum = 0;
+	float Amplitude = 1;
+	float Frequency = 1;
+	for (int i = 0; i < NumOctaves; i++)
+	{
+		Sum += Amplitude * FMath::PerlinNoise3D(FVector(fractalInput.X * Frequency, fractalInput.Y * Frequency, fractalInput.Z * Frequency));
+		Amplitude += Gain;
+		Frequency += Lacunarity;
+	}
+	return Sum;
+}
+
 
 void ATerrainTile::AssignTriangles()
 {

@@ -4,6 +4,7 @@
 
 #include "ProceduralMeshComponent.h"
 
+#include "VectorTypes.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TerrainTile.generated.h"
@@ -27,46 +28,53 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
+	static double PerlinWrapper(FVector3<double> perlinInput);
+
+	static float FractalBrownianMotion(FVector fractalInput);
+
 	void AssignTriangles();
 	void AssignColours();
 
-	UFUNCTION(CallInEditor, Category = "ProcGen")
+	UFUNCTION(CallInEditor, Category = "ProcMesh")
 		void CreateMesh();
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UProceduralMeshComponent* ProcMesh;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int Scale = 100;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int GridSizeX = 16;
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		int GridSizeX = 100;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int GridSizeY = 16;
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		int GridSizeY = 100;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		int GridSizeZ = 1;
+
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int32 SectionIndex;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		TArray< FVector > Vertices;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		TArray< int32 > Triangles;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		TArray< FVector > Normals;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		TArray< FVector2D > UV0;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		TArray< FColor > VertexColour;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		TArray <FProcMeshTangent> Tangents;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "Mesh")
 		bool CreateCollision;
 
 
