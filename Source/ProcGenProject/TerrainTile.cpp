@@ -102,7 +102,7 @@ float ATerrainTile::FractalBrownianMotion(FVector fractalInput)
 	float Frequency = 1;
 	for (int i = 0; i < NumOctaves; i++)
 	{
-		Sum += Amplitude * FMath::PerlinNoise3D(FVector((fractalInput.X * Frequency) /scale, (fractalInput.Y * Frequency) / scale, (fractalInput.Z * Frequency)) / scale);
+		Sum += Amplitude * FMath::PerlinNoise3D((FVector((fractalInput.X * Frequency) /scale, (fractalInput.Y * Frequency) / scale, (fractalInput.Z * Frequency)) / scale) + fractalInput.Z);
 		Amplitude += Gain;
 		Frequency += Lacunarity;
 	}
