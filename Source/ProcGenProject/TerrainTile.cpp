@@ -27,7 +27,8 @@ void ATerrainTile::BeginPlay()
 	//MarchingCubes.bParallelCompute = true;
 	//MarchingCubes.CellDimensions = FVector3i{ 100,100,100 };
 	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-	MarchingCubes.CubeSize = 200;
+	MarchingCubes.CubeSize = 50;
+	MarchingCubes.IsoValue = 0;
 	MarchingCubes.Generate();
 
 	//Convert FIndex3i to Int32
@@ -37,6 +38,7 @@ void ATerrainTile::BeginPlay()
 		Triangles.Push(int32(MarchingCubes.Triangles[i].B));
 		Triangles.Push(int32(MarchingCubes.Triangles[i].C));
 	}
+
 	Vertices = TArray<FVector>(MarchingCubes.Vertices);
 	Normals = TArray<FVector>(MarchingCubes.Normals);
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
@@ -84,7 +86,13 @@ void ATerrainTile::AssignColours()
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 {
-	return double(FractalBrownianMotion(FVector(perlinInput)));
+	//double test = double(FractalBrownianMotion(FVector(perlinInput))) * 10000;
+	//return test;
+
+	perlinInput = perlinInput / 500;
+	double test = FMath::PerlinNoise3D(FVector(perlinInput));
+	return test;
+
 }
 
 float ATerrainTile::FractalBrownianMotion(FVector fractalInput)
@@ -102,11 +110,13 @@ float ATerrainTile::FractalBrownianMotion(FVector fractalInput)
 	float Frequency = 1;
 	for (int i = 0; i < NumOctaves; i++)
 	{
-		Sum += Amplitude * FMath::PerlinNoise3D((FVector((fractalInput.X * Frequency) /scale, (fractalInput.Y * Frequency) / scale, (fractalInput.Z * Frequency)) / scale) + fractalInput.Z);
+		Sum += Amplitude * FMath::PerlinNoise3D((FVector((fractalInput.X * Frequency) /scale, 
+														(fractalInput.Y * Frequency) / scale, 
+														(fractalInput.Z * Frequency)) / scale));
 		Amplitude += Gain;
 		Frequency += Lacunarity;
 	}
-	return Sum;
+	return Sum / NumOctaves;
 }
 
 
