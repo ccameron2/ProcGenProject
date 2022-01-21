@@ -22,12 +22,12 @@ void ATerrainTile::BeginPlay()
 
 	//CreateMesh();
 	FMarchingCubes MarchingCubes;
-	FAxisAlignedBox3d BoundingBox(FVector3d{0,0,0}, FVector3d{double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
+	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + FVector3d{double(GridSizeX) , double(GridSizeY) , double(GridSizeZ)});
 	MarchingCubes.Bounds = BoundingBox;
 	//MarchingCubes.bParallelCompute = true;
 	//MarchingCubes.CellDimensions = FVector3i{ 100,100,100 };
 	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-	MarchingCubes.CubeSize = 50;
+	MarchingCubes.CubeSize = 500;
 	MarchingCubes.IsoValue = 0;
 	MarchingCubes.Generate();
 
@@ -88,36 +88,45 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 {
 	//double test = double(FractalBrownianMotion(FVector(perlinInput))) * 10000;
 	//return test;
+	perlinInput = perlinInput / 5000;
+	//double test2DPerlin = FMath::PerlinNoise2D(FVector2D(perlinInput.X, perlinInput.Z));
+	//double test = FractalBrownianMotion(FVector(perlinInput));
 
-	perlinInput = perlinInput / 500;
-	double test = FMath::PerlinNoise3D(FVector(perlinInput));
-	return test;
+	float density = -perlinInput.Z + 1;
 
+	//float density = 0;
+	//if (perlinInput.Z > 1.5)
+	//{
+	//	density -= 0.5;
+	//}
+
+	density += FractalBrownianMotion(FVector(perlinInput.X, perlinInput.Y, perlinInput.Z) / 1.5, 6,1);
+	density += FractalBrownianMotion(FVector(perlinInput.X, perlinInput.Y, 0),6,0.5);
+
+	return density;
 }
 
-float ATerrainTile::FractalBrownianMotion(FVector fractalInput)
+float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, float frequency)
 {
-	int scale = 10;
+	//The book of shaders
 
-	float NumOctaves = 8;
+	float result = 0;
+	float amplitude = 0.5;
+	//float frequency = 0.5;
+	//float octaves = 6;
+	float lacunarity = 2.0;
+	float gain = 0.5;
 
-	float Lacunarity = 4;
-
-	float Gain = 0.5;
-
-	float Sum = 0;
-	float Amplitude = 1;
-	float Frequency = 1;
-	for (int i = 0; i < NumOctaves; i++)
+	for (int i = 0; i < octaves; i++)
 	{
-		Sum += Amplitude * FMath::PerlinNoise3D((FVector((fractalInput.X * Frequency) /scale, 
-														(fractalInput.Y * Frequency) / scale, 
-														(fractalInput.Z * Frequency)) / scale));
-		Amplitude += Gain;
-		Frequency += Lacunarity;
+		result += amplitude * FMath::PerlinNoise3D(frequency * fractalInput);
+		frequency *= lacunarity;
+		amplitude *= gain;
 	}
-	return Sum / NumOctaves;
+
+	return result;
 }
+
 
 
 void ATerrainTile::AssignTriangles()

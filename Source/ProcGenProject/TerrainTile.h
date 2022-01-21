@@ -30,7 +30,7 @@ public:
 
 	static double PerlinWrapper(FVector3<double> perlinInput);
 
-	static float FractalBrownianMotion(FVector fractalInput);
+	static float FractalBrownianMotion(FVector fractalInput, float octaves, float frequency);
 
 	void AssignTriangles();
 	void AssignColours();
@@ -45,13 +45,13 @@ public:
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeX = 5000;
+		int GridSizeX = 50000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeY = 5000;
+		int GridSizeY = 50000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 1000;
+		int GridSizeZ = 10000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int32 SectionIndex;
