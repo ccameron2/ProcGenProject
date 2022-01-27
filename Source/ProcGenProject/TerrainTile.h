@@ -32,10 +32,10 @@ public:
 
 	static float FractalBrownianMotion(FVector fractalInput, float octaves, float frequency);
 
-	void AssignTriangles();
-	void AssignColours();
+	//void AssignTriangles();
+	//void AssignColours();
 
-	UFUNCTION(CallInEditor, Category = "ProcMesh")
+	UFUNCTION()
 		void CreateMesh();
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
@@ -45,33 +45,33 @@ public:
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeX = 50000;
+		int GridSizeX = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeY = 50000;
+		int GridSizeY = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 10000;
+		int GridSizeZ = 256;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		int32 SectionIndex;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		TArray< FVector > Vertices;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		TArray< int32 > Triangles;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		TArray< FVector > Normals;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		TArray< FVector2D > UV0;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		TArray< FColor > VertexColour;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY()
 		TArray <FProcMeshTangent> Tangents;
 
 	UPROPERTY(EditAnywhere, Category = "Mesh")
