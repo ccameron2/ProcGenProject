@@ -20,7 +20,7 @@ ATerrainTile::ATerrainTile()
 void ATerrainTile::BeginPlay()
 {
 	Super::BeginPlay();
-
+	CreateMesh();
 }
 
 //void ATerrainTile::CreateMesh()
@@ -73,7 +73,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//double test2DPerlin = FMath::PerlinNoise2D(FVector2D(perlinInput.X, perlinInput.Z));
 	//double test = FractalBrownianMotion(FVector(perlinInput));
 
-	float density = ( -noiseInput.Z / 3.5) + 1;
+	float density = ( -noiseInput.Z / 5) + 1;
 	//float density = 0;
 	
 	//if (perlinInput.Z > 1.5)
@@ -91,27 +91,25 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//}
 
 	//Add 3D noise partially
-	density += FractalBrownianMotion(FVector(noiseInput) / 2, 9,0.1);
-
+	density += FractalBrownianMotion(FVector(noiseInput) / 8, 4,0.1);
+	
 	//Add 2D noise
 	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),6,0.2);
 
-	float density2 = FractalBrownianMotion(FVector(noiseInput), 9, 1);
+	float density2 = FractalBrownianMotion(FVector(noiseInput), 3, 0.5);
 
-	if (perlinInput.Z > 96)
+	if (perlinInput.Z >= 192)
 	{
 		return density;
 	}
-	else if(perlinInput.Z < 64)
+	else if(perlinInput.Z < 160)
 	{
 		return density2;
 	}
 	else
 	{
-		FMath::Lerp(density, density2, (perlinInput.Z - 64)/100);
+		return FMath::Lerp(density, density2 / 3, (perlinInput.Z - 160)/(160-96));
 	}
-
-	return density;
 }
 
 float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, float frequency)
@@ -201,6 +199,5 @@ void ATerrainTile::Tick(float DeltaTime)
 
 void ATerrainTile::OnConstruction(const FTransform& Transform)
 {
-	CreateMesh();
 }
 

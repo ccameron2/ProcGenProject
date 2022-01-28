@@ -53,6 +53,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int GridSizeZ = 256;
 
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		int tileNo = 0;
+
 	UPROPERTY()
 		int32 SectionIndex;
 
