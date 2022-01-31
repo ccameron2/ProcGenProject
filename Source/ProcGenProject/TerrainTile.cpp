@@ -14,6 +14,7 @@ ATerrainTile::ATerrainTile()
 	//Create Procedural mesh and attach to root component
 	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
 	ProcMesh->SetupAttachment(RootComponent);
+	ProcMesh->SetMaterial(0, Material);
 }
 
 // Called when the game starts or when spawned
@@ -73,7 +74,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//double test2DPerlin = FMath::PerlinNoise2D(FVector2D(perlinInput.X, perlinInput.Z));
 	//double test = FractalBrownianMotion(FVector(perlinInput));
 
-	float density = ( -noiseInput.Z / 5) + 1;
+	float density = ( -noiseInput.Z / 15) + 1;
 	//float density = 0;
 	
 	//if (perlinInput.Z > 1.5)
@@ -91,24 +92,27 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//}
 
 	//Add 3D noise partially
-	density += FractalBrownianMotion(FVector(noiseInput) / 8, 4,0.1);
+	density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.08);
 	
 	//Add 2D noise
-	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),6,0.2);
+	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),8,0.08);
 
-	float density2 = FractalBrownianMotion(FVector(noiseInput), 3, 0.5);
+	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
 
-	if (perlinInput.Z >= 192)
+	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 8, 0.9);
+
+	if (perlinInput.Z >= 768)
 	{
 		return density;
 	}
-	else if(perlinInput.Z < 160)
+	else if(perlinInput.Z < 512)
 	{
 		return density2;
 	}
 	else
 	{
-		return FMath::Lerp(density, density2 / 3, (perlinInput.Z - 160)/(160-96));
+		//if (perlinInput.Z > 175) { density = 0; return density; }
+		return FMath::Lerp(density2, density, (perlinInput.Z - 512) / (768 - 512));
 	}
 }
 
@@ -142,7 +146,7 @@ void ATerrainTile::CreateMesh()
 	MarchingCubes.bParallelCompute = true;
 	//MarchingCubes.CellDimensions = FVector3i{ 100,100,100 };
 	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-	MarchingCubes.CubeSize = 5;
+	MarchingCubes.CubeSize = 4;
 	MarchingCubes.IsoValue = 0;
 	MarchingCubes.Generate();
 

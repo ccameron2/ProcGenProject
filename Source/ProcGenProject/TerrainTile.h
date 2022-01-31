@@ -17,7 +17,6 @@ class PROCGENPROJECT_API ATerrainTile : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ATerrainTile();
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -39,6 +38,9 @@ public:
 		void CreateMesh();
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		UMaterialInterface* Material;
+
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UProceduralMeshComponent* ProcMesh;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
@@ -51,10 +53,10 @@ public:
 		int GridSizeY = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 256;
+		int GridSizeZ = 1024;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int tileNo = 0;
+		FVector2D ChunkPos = { 0,0 };
 
 	UPROPERTY()
 		int32 SectionIndex;
