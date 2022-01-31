@@ -175,10 +175,28 @@ void ATerrainTile::CreateMesh()
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
 	//Calculate normals and tangents for textures
-	UKismetProceduralMeshLibrary* procLib;
-	procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
+	//UKismetProceduralMeshLibrary* procLib;
+	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 	//Normals = TArray<FVector>(MarchingCubes.Normals);
+
+	Normals.Init({ 0,0,0 }, Vertices.Num());
+
+	for (int i = 0; i < Vertices.Num(); i += 3)
+	{
+		if (i > Vertices.Num() - 3) { break; }
+		FVector edge1 = Vertices[i + 1] - Vertices[i + 2];
+		FVector edge2 = Vertices[i] - Vertices[i + 2];
+		FVector normal = FVector::CrossProduct(edge1, edge2);
+		normal.Normalize();
+		Normals[i] += normal;
+		Normals[i + 1] += normal;
+		Normals[i + 2] += normal;
+	}
+	for (auto normal : Normals)
+	{
+		normal.Normalize();
+	}
 
 	//Create Procedural Mesh Section with Marching Cubes data
 	ProcMesh->ClearAllMeshSections();
