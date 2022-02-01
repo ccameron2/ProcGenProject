@@ -19,9 +19,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Chunks")
 	TArray<ATerrainTile*> TileArray;
 	UPROPERTY(EditAnywhere,Category = "Chunks")
-		int TileX = 5;
+		int TileX = 8;
 	UPROPERTY(EditAnywhere, Category = "Chunks")
-		int TileY = 5;
+		int TileY = 8;
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int ChunkSize = 256;
 

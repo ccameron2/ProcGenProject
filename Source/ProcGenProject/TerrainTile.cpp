@@ -14,6 +14,8 @@ ATerrainTile::ATerrainTile()
 	//Create Procedural mesh and attach to root component
 	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
 	ProcMesh->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
+	Material = TerrainMaterial.Object;
 	ProcMesh->SetMaterial(0, Material);
 }
 
@@ -92,14 +94,14 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//}
 
 	//Add 3D noise partially
-	density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.08);
+	density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.04);
 	
 	//Add 2D noise
-	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),8,0.08);
+	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),8,0.06);
 
 	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
 
-	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 8, 0.9);
+	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 8, 1);
 
 	if (perlinInput.Z >= 768)
 	{
@@ -111,7 +113,6 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	}
 	else
 	{
-		//if (perlinInput.Z > 175) { density = 0; return density; }
 		return FMath::Lerp(density2, density, (perlinInput.Z - 512) / (768 - 512));
 	}
 }
@@ -156,7 +157,6 @@ void ATerrainTile::CreateMesh()
 	Tangents.Empty();
 	UV0.Empty();
 
-
 	//Convert FIndex3i to Int32
 	for (int i = 0; i < MarchingCubes.Triangles.Num(); i++)
 	{
@@ -174,36 +174,118 @@ void ATerrainTile::CreateMesh()
 
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
-	//Calculate normals and tangents for textures
+	//Calculate normals for textures
 	//UKismetProceduralMeshLibrary* procLib;
 	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 	//Normals = TArray<FVector>(MarchingCubes.Normals);
 
-	Normals.Init({ 0,0,0 }, Vertices.Num());
+	CalculateNormals();
 
-	for (int i = 0; i < Vertices.Num(); i += 3)
-	{
-		if (i > Vertices.Num() - 3) { break; }
-		FVector edge1 = Vertices[i + 1] - Vertices[i + 2];
-		FVector edge2 = Vertices[i] - Vertices[i + 2];
-		FVector normal = FVector::CrossProduct(edge1, edge2);
-		normal.Normalize();
-		Normals[i] += normal;
-		Normals[i + 1] += normal;
-		Normals[i + 2] += normal;
-	}
-	for (auto normal : Normals)
-	{
-		normal.Normalize();
-	}
+
+	//for (int i = 0; i < Vertices.Num(); i += 3)
+	//{
+	//	if (i > Vertices.Num() - 3) { break; }
+	//	FVector edge1 = Vertices[i + 1] - Vertices[i + 2];
+	//	FVector edge2 = Vertices[i] - Vertices[i + 2];
+	//	FVector normal = FVector::CrossProduct(edge1, edge2);
+	//	normal.Normalize();
+	//	Normals[i] += normal;
+	//	Normals[i + 1] += normal;
+	//	Normals[i + 2] += normal; 
+	//}
 
 	//Create Procedural Mesh Section with Marching Cubes data
 	ProcMesh->ClearAllMeshSections();
 	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 }
 
+void ATerrainTile::CalculateNormals()
+{
+	Normals.Init({ 0,0,0 }, Vertices.Num());
+	for (int i = 0; i < Vertices.Num(); i++)
+	{
+		FVector nP = { 0,0,0 }; //North point
+		FVector sP = { 0,0,0 }; //South point
+		FVector eP = { 0,0,0 }; //East point
+		FVector wP = { 0,0,0 }; //West point
+		FVector cP = { 0,0,0 }; //Centre point
 
+		if (i == 0) //North West Corner
+		{
+			cP = Vertices[i];
+			sP = Vertices[i + GridSizeX];
+			eP = Vertices[i + 1];
+			Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (eP.Z - cP.Z) * 2,1 };
+		}
+		else if (i == GridSizeX - 1) //North East Corner
+		{
+			cP = Vertices[i];
+			sP = Vertices[i + GridSizeX];
+			wP = Vertices[i - 1];
+			Normals[i] = FVector{ (sP.Z - cP.Z) * 2, (wP.Z - cP.Z) * 2, 1 };
+		}
+		else if (i == Vertices.Num() - GridSizeX) //South West Corner
+		{
+			cP = Vertices[i];
+			nP = Vertices[i - GridSizeX];
+			eP = Vertices[i + 1];
+			Normals[i] = FVector{ (cP.Z - nP.Z) * 2,(eP.Z - cP.Z) * 2, 1 };
+		}
+		else if (i == Vertices.Num() - 1) //South East Corner
+		{
+			cP = Vertices[i];
+			nP = Vertices[i - GridSizeX];
+			wP = Vertices[i - 1];
+			Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (cP.Z - wP.Z) * 2, 1 };
+		}
+		else if (i < GridSizeX) //North Row
+		{
+			cP = Vertices[i];
+			sP = Vertices[i + GridSizeX];
+			eP = Vertices[i + 1];
+			wP = Vertices[i - 1];
+			Normals[i] = FVector{ (sP.Z - cP.Z) * 2, eP.Z - wP.Z, 1 };
+		}
+		else if (GridSizeX % i == 0) //West row
+		{
+			nP = Vertices[i - GridSizeX];
+			sP = Vertices[i + GridSizeX];
+			cP = Vertices[i];
+			eP = Vertices[i + 1];
+			Normals[i] = FVector{ sP.Z - nP.Z, (eP.Z - cP.Z) * 2, 1 };
+		}
+		else if (GridSizeX % i == 1) //East row
+		{
+			nP = Vertices[i - GridSizeX];
+			sP = Vertices[i + GridSizeX];
+			cP = Vertices[i];
+			wP = Vertices[i - 1];
+			Normals[i] = FVector{ sP.Z - nP.Z, (cP.Z - wP.Z) * 2, 1 };
+		}
+		else if (i > Vertices.Num() - GridSizeX) //South row
+		{
+			nP = Vertices[i - GridSizeX];
+			cP = Vertices[i];
+			eP = Vertices[i + 1];
+			wP = Vertices[i - 1];
+			Normals[i] = FVector{ (cP.Z - nP.Z) * 2, eP.Z - wP.Z, 1 };
+		}
+		else
+		{
+			nP = Vertices[i - GridSizeX];
+			sP = Vertices[i + GridSizeX];
+			eP = Vertices[i + 1];
+			wP = Vertices[i - 1];
+			Normals[i] = FVector{ sP.Z - nP.Z, wP.Z - eP.Z, 1 };
+		}
+	}
+
+	for (auto normal : Normals)
+	{
+		normal.Normalize();
+	}
+}
 
 //void ATerrainTile::AssignTriangles()
 //{

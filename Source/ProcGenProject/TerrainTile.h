@@ -30,6 +30,8 @@ public:
 	static double PerlinWrapper(FVector3<double> perlinInput);
 
 	static float FractalBrownianMotion(FVector fractalInput, float octaves, float frequency);
+	
+	void CalculateNormals();
 
 	//void AssignTriangles();
 	//void AssignColours();
