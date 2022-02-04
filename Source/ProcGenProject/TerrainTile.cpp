@@ -99,21 +99,26 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//Add 2D noise
 	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),8,0.06);
 
+
 	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
 
 	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 8, 1);
 
-	if (perlinInput.Z >= 768)
+	if (perlinInput.Z >= 640)
 	{
 		return density;
 	}
-	else if(perlinInput.Z < 512)
+	else if(perlinInput.Z < 384)
 	{
 		return density2;
 	}
 	else
 	{
-		return FMath::Lerp(density2, density, (perlinInput.Z - 512) / (768 - 512));
+		if (perlinInput.Z > 512)
+		{
+			density2 += 0.2;
+		}
+		return FMath::Lerp(density2, density, (perlinInput.Z - 384) / (640 - 384));
 	}
 }
 
@@ -147,7 +152,7 @@ void ATerrainTile::CreateMesh()
 	MarchingCubes.bParallelCompute = true;
 	//MarchingCubes.CellDimensions = FVector3i{ 100,100,100 };
 	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-	MarchingCubes.CubeSize = 4;
+	MarchingCubes.CubeSize = 8;
 	MarchingCubes.IsoValue = 0;
 	MarchingCubes.Generate();
 
@@ -180,7 +185,7 @@ void ATerrainTile::CreateMesh()
 
 	//Normals = TArray<FVector>(MarchingCubes.Normals);
 
-	CalculateNormals();
+	//CalculateNormals();
 
 
 	//for (int i = 0; i < Vertices.Num(); i += 3)
@@ -277,7 +282,7 @@ void ATerrainTile::CalculateNormals()
 			sP = Vertices[i + GridSizeX];
 			eP = Vertices[i + 1];
 			wP = Vertices[i - 1];
-			Normals[i] = FVector{ sP.Z - nP.Z, wP.Z - eP.Z, 1 };
+			Normals[i] = FVector{ sP.Z - nP.Z, eP.Z - wP.Z, 1 };
 		}
 	}
 
@@ -304,4 +309,3 @@ void ATerrainTile::Tick(float DeltaTime)
 void ATerrainTile::OnConstruction(const FTransform& Transform)
 {
 }
-
