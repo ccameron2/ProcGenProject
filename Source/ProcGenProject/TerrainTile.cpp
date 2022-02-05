@@ -76,7 +76,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//double test2DPerlin = FMath::PerlinNoise2D(FVector2D(perlinInput.X, perlinInput.Z));
 	//double test = FractalBrownianMotion(FVector(perlinInput));
 
-	float density = ( -noiseInput.Z / 15) + 1;
+	float density = ( -noiseInput.Z / 14) + 1;
 	//float density = 0;
 	
 	//if (perlinInput.Z > 1.5)
@@ -94,10 +94,10 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//}
 
 	//Add 3D noise partially
-	density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.04);
+	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
 	
 	//Add 2D noise
-	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),8,0.06);
+	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),6,0.04);
 
 
 	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
@@ -114,11 +114,11 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	}
 	else
 	{
-		if (perlinInput.Z > 512)
-		{
-			density2 += 0.2;
-		}
-		return FMath::Lerp(density2, density, (perlinInput.Z - 384) / (640 - 384));
+		//if (perlinInput.Z > 512)
+		//{
+		//	density2 += 0.2;
+		//}
+		return FMath::Lerp(density2 + 0.1f, density, (perlinInput.Z - 384) / (640 - 384));
 	}
 }
 
@@ -180,13 +180,12 @@ void ATerrainTile::CreateMesh()
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
 	//Calculate normals for textures
-	//UKismetProceduralMeshLibrary* procLib;
-	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
+	UKismetProceduralMeshLibrary* procLib;
+	procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 	//Normals = TArray<FVector>(MarchingCubes.Normals);
 
 	//CalculateNormals();
-
 
 	//for (int i = 0; i < Vertices.Num(); i += 3)
 	//{
