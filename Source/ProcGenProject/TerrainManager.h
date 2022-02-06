@@ -19,11 +19,19 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Chunks")
 	TArray<ATerrainTile*> TileArray;
 	UPROPERTY(EditAnywhere,Category = "Chunks")
-		int TileX = 8;
+		int TileX = 5;
 	UPROPERTY(EditAnywhere, Category = "Chunks")
-		int TileY = 8;
+		int TileY = 1;
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int ChunkSize = 256;
+
+	//From TerrainTile
+	UPROPERTY(EditAnywhere, Category = "Chunks")
+		int Scale = 100;
+
+	FVector2D GetPlayerGridPosition();
+	FVector2D GetTilePosition(int index);
+	bool hasRun = false;
 
 protected:
 	// Called when the game starts or when spawned

@@ -180,12 +180,12 @@ void ATerrainTile::CreateMesh()
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
 	//Calculate normals for textures
-	UKismetProceduralMeshLibrary* procLib;
-	procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
+	//UKismetProceduralMeshLibrary* procLib;
+	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 	//Normals = TArray<FVector>(MarchingCubes.Normals);
 
-	//CalculateNormals();
+	CalculateNormals();
 
 	//for (int i = 0; i < Vertices.Num(); i += 3)
 	//{
