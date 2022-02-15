@@ -206,6 +206,12 @@ void ATerrainTile::CreateMesh()
 	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 }
 
+static struct VertToTriMap
+{
+	FVector vertex;
+	TArray<FIndex3i> triangles;
+};
+
 void ATerrainTile::CalculateNormals()
 {
 
@@ -231,20 +237,17 @@ void ATerrainTile::CalculateNormals()
 				Vertices[vertex] == Vertices[triangle.B] ||
 				Vertices[vertex] == Vertices[triangle.C])
 			{
-				if (counter > 8)
-				{
-					break;
-				}
-				for (int i = 0; i <= 8; i++)
+				if (counter >= 8){ break; } //If 8 triangles are shared move to next vertex
+				for (int i = 0; i < VertToTriMap[vertex].Num(); i++)
 				{
 					if (VertToTriMap[vertex][i] != triangle)
 					{
 						VertToTriMap[vertex][i] = triangle;
+						counter++;
 						break;
 					}
 				}
 				//VertToTriMap.AddUnique(Vertices[vertex], triangle);
-				counter = 0;
 			}
 		}
 	}
@@ -259,14 +262,8 @@ void ATerrainTile::CalculateNormals()
 			sharedTriangles.Push(VertToTriMap[i][j]);
 		}
 		//VertToTriMap.MultiFind(Vertices[i], sharedTriangles);
-		int counter = 0;
 		for (auto& triangle : sharedTriangles)
-		{
-			if (counter > 8)
-			{
-				break;
-			}
-			counter++;
+		{			
 			auto A = Vertices[triangle.A];
 			auto B = Vertices[triangle.B];
 			auto C = Vertices[triangle.C];
