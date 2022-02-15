@@ -2,7 +2,6 @@
 #include "TerrainTile.h"
 #include <functional>
 #include "KismetProceduralMeshLibrary.h"
-#include "Generators/MarchingCubes.h"
 #include "HAL/Runnable.h"
 
 // Sets default values
@@ -146,7 +145,6 @@ float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, f
 void ATerrainTile::CreateMesh()
 {
 	//Marching Cubes
-	FMarchingCubes MarchingCubes;
 	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
 	MarchingCubes.Bounds = BoundingBox;
 	MarchingCubes.bParallelCompute = true;
@@ -185,7 +183,120 @@ void ATerrainTile::CreateMesh()
 
 	//Normals = TArray<FVector>(MarchingCubes.Normals);
 
+
+	/*for (auto triangle : MarchingCubes.Triangles)
+	{
+		auto A = Vertices[triangle.A];
+		auto B = Vertices[triangle.B];
+		auto C = Vertices[triangle.C];
+		auto E1 = A - B;
+		auto E2 = C - B;
+		auto Normal = E1 ^ E2;
+		Normals.Push(Normal);
+	}
+	for (auto normal : Normals)
+	{
+		normal.Normalize();
+	}*/
+
 	CalculateNormals();
+
+	//Create Procedural Mesh Section with Marching Cubes data
+	ProcMesh->ClearAllMeshSections();
+	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+}
+
+void ATerrainTile::CalculateNormals()
+{
+
+	Normals.Init({ 0,0,0 }, Vertices.Num());
+
+	// Map of vertex to triangles in Triangles array
+	// 
+	//TMultiMap<FVector3f, FIndex3i> VertToTriMap;
+
+	TArray<TArray<FIndex3i>> VertToTriMap;
+	VertToTriMap.Init(TArray<FIndex3i>{	FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 },
+										FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }, 
+										FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }}, 
+										Vertices.Num());
+
+	//For each vertex check which triangles it is shared by and add to a map
+	for (int vertex = 0; vertex < Vertices.Num(); vertex++)
+	{
+		int counter = 0;
+		for (auto& triangle : MarchingCubes.Triangles)
+		{
+			if (Vertices[vertex] == Vertices[triangle.A] || 
+				Vertices[vertex] == Vertices[triangle.B] ||
+				Vertices[vertex] == Vertices[triangle.C])
+			{
+				if (counter > 8)
+				{
+					break;
+				}
+				for (int i = 0; i <= 8; i++)
+				{
+					if (VertToTriMap[vertex][i] != triangle)
+					{
+						VertToTriMap[vertex][i] = triangle;
+						break;
+					}
+				}
+				//VertToTriMap.AddUnique(Vertices[vertex], triangle);
+				counter = 0;
+			}
+		}
+	}
+
+
+	//For each vertex collect the triangles that share it and calculate the face normal
+	for (int i = 0; i < Vertices.Num(); i++)
+	{
+		TArray<FIndex3i> sharedTriangles;
+		for (int j = 0; j < VertToTriMap[i].Num(); j++)
+		{
+			sharedTriangles.Push(VertToTriMap[i][j]);
+		}
+		//VertToTriMap.MultiFind(Vertices[i], sharedTriangles);
+		int counter = 0;
+		for (auto& triangle : sharedTriangles)
+		{
+			if (counter > 8)
+			{
+				break;
+			}
+			counter++;
+			auto A = Vertices[triangle.A];
+			auto B = Vertices[triangle.B];
+			auto C = Vertices[triangle.C];
+			auto E1 = A - B;
+			auto E2 = C - B;
+			auto Normal = E1 ^ E2;
+			Normal.Normalize();
+			Normals[i] += Normal;
+		}
+	}
+
+	//Average the face normals
+	for (auto& normal : Normals)
+	{
+		normal.Normalize();
+	}
+
+	//for (int i = 0; i < Vertices.Num(); i++)
+	//{
+	//	if (i > Vertices.Num() - 3) { break; }
+	//	auto A = Vertices[i];
+	//	auto B = Vertices[i + 1];
+	//	auto C = Vertices[i + 2];
+	//	auto E1 = A - B;
+	//	auto E2 = C - B;
+	//	auto Normal = E1 ^ E2;	
+	//	Normals[i] += Normal;
+	//	Normals[i+1] += Normal;
+	//	Normals[i+2] += Normal;
+	//}
 
 	//for (int i = 0; i < Vertices.Num(); i += 3)
 	//{
@@ -199,96 +310,95 @@ void ATerrainTile::CreateMesh()
 	//	Normals[i + 2] += normal; 
 	//}
 
-	//Create Procedural Mesh Section with Marching Cubes data
-	ProcMesh->ClearAllMeshSections();
-	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
-}
-
-void ATerrainTile::CalculateNormals()
-{
-	Normals.Init({ 0,0,0 }, Vertices.Num());
-	for (int i = 0; i < Vertices.Num(); i++)
-	{
-		FVector nP = { 0,0,0 }; //North point
-		FVector sP = { 0,0,0 }; //South point
-		FVector eP = { 0,0,0 }; //East point
-		FVector wP = { 0,0,0 }; //West point
-		FVector cP = { 0,0,0 }; //Centre point
-
-		if (i == 0) //North West Corner
-		{
-			cP = Vertices[i];
-			sP = Vertices[i + GridSizeX];
-			eP = Vertices[i + 1];
-			Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (eP.Z - cP.Z) * 2,1 };
-		}
-		else if (i == GridSizeX - 1) //North East Corner
-		{
-			cP = Vertices[i];
-			sP = Vertices[i + GridSizeX];
-			wP = Vertices[i - 1];
-			Normals[i] = FVector{ (sP.Z - cP.Z) * 2, (wP.Z - cP.Z) * 2, 1 };
-		}
-		else if (i == Vertices.Num() - GridSizeX) //South West Corner
-		{
-			cP = Vertices[i];
-			nP = Vertices[i - GridSizeX];
-			eP = Vertices[i + 1];
-			Normals[i] = FVector{ (cP.Z - nP.Z) * 2,(eP.Z - cP.Z) * 2, 1 };
-		}
-		else if (i == Vertices.Num() - 1) //South East Corner
-		{
-			cP = Vertices[i];
-			nP = Vertices[i - GridSizeX];
-			wP = Vertices[i - 1];
-			Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (cP.Z - wP.Z) * 2, 1 };
-		}
-		else if (i < GridSizeX) //North Row
-		{
-			cP = Vertices[i];
-			sP = Vertices[i + GridSizeX];
-			eP = Vertices[i + 1];
-			wP = Vertices[i - 1];
-			Normals[i] = FVector{ (sP.Z - cP.Z) * 2, eP.Z - wP.Z, 1 };
-		}
-		else if (GridSizeX % i == 0) //West row
-		{
-			nP = Vertices[i - GridSizeX];
-			sP = Vertices[i + GridSizeX];
-			cP = Vertices[i];
-			eP = Vertices[i + 1];
-			Normals[i] = FVector{ sP.Z - nP.Z, (eP.Z - cP.Z) * 2, 1 };
-		}
-		else if (GridSizeX % i == 1) //East row
-		{
-			nP = Vertices[i - GridSizeX];
-			sP = Vertices[i + GridSizeX];
-			cP = Vertices[i];
-			wP = Vertices[i - 1];
-			Normals[i] = FVector{ sP.Z - nP.Z, (cP.Z - wP.Z) * 2, 1 };
-		}
-		else if (i > Vertices.Num() - GridSizeX) //South row
-		{
-			nP = Vertices[i - GridSizeX];
-			cP = Vertices[i];
-			eP = Vertices[i + 1];
-			wP = Vertices[i - 1];
-			Normals[i] = FVector{ (cP.Z - nP.Z) * 2, eP.Z - wP.Z, 1 };
-		}
-		else
-		{
-			nP = Vertices[i - GridSizeX];
-			sP = Vertices[i + GridSizeX];
-			eP = Vertices[i + 1];
-			wP = Vertices[i - 1];
-			Normals[i] = FVector{ sP.Z - nP.Z, eP.Z - wP.Z, 1 };
-		}
-	}
-
-	for (auto normal : Normals)
-	{
-		normal.Normalize();
-	}
+	//for (int i = 0; i < Triangles.Num(); i ++)
+	//{
+	//	if (i > Vertices.Num() - 3) { break; }
+	//	auto A = Vertices[i];
+	//	auto B = Vertices[i + 1];
+	//	auto C = Vertices[i + 2];
+	//	auto P = (B - A) ^ (C - A); //Cross product
+	//	Normals[i] += P;
+	//	Normals[i + 1] += P;
+	//	Normals[i + 2] += P;
+	//}
+	
+	//for (int i = 0; i < Vertices.Num(); i++)
+	//{
+	//	FVector nP = { 0,0,0 }; //North point
+	//	FVector sP = { 0,0,0 }; //South point
+	//	FVector eP = { 0,0,0 }; //East point
+	//	FVector wP = { 0,0,0 }; //West point
+	//	FVector cP = { 0,0,0 }; //Centre point
+	//	if (i == 0) //North West Corner
+	//	{
+	//		cP = Vertices[i];
+	//		sP = Vertices[i + GridSizeX];
+	//		eP = Vertices[i + 1];
+	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (eP.Z - cP.Z) * 2,1 };
+	//	}
+	//	else if (i == GridSizeX - 1) //North East Corner
+	//	{
+	//		cP = Vertices[i];
+	//		sP = Vertices[i + GridSizeX];
+	//		wP = Vertices[i - 1];
+	//		Normals[i] = FVector{ (sP.Z - cP.Z) * 2, (wP.Z - cP.Z) * 2, 1 };
+	//	}
+	//	else if (i == Vertices.Num() - GridSizeX) //South West Corner
+	//	{
+	//		cP = Vertices[i];
+	//		nP = Vertices[i - GridSizeX];
+	//		eP = Vertices[i + 1];
+	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2,(eP.Z - cP.Z) * 2, 1 };
+	//	}
+	//	else if (i == Vertices.Num() - 1) //South East Corner
+	//	{
+	//		cP = Vertices[i];
+	//		nP = Vertices[i - GridSizeX];
+	//		wP = Vertices[i - 1];
+	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (cP.Z - wP.Z) * 2, 1 };
+	//	}
+	//	else if (i < GridSizeX) //North Row
+	//	{
+	//		cP = Vertices[i];
+	//		sP = Vertices[i + GridSizeX];
+	//		eP = Vertices[i + 1];
+	//		wP = Vertices[i - 1];
+	//		Normals[i] = FVector{ (sP.Z - cP.Z) * 2, eP.Z - wP.Z, 1 };
+	//	}
+	//	else if (GridSizeX % i == 0) //West row
+	//	{
+	//		nP = Vertices[i - GridSizeX];
+	//		sP = Vertices[i + GridSizeX];
+	//		cP = Vertices[i];
+	//		eP = Vertices[i + 1];
+	//		Normals[i] = FVector{ sP.Z - nP.Z, (eP.Z - cP.Z) * 2, 1 };
+	//	}
+	//	else if (GridSizeX % i == 1) //East row
+	//	{
+	//		nP = Vertices[i - GridSizeX];
+	//		sP = Vertices[i + GridSizeX];
+	//		cP = Vertices[i];
+	//		wP = Vertices[i - 1];
+	//		Normals[i] = FVector{ sP.Z - nP.Z, (cP.Z - wP.Z) * 2, 1 };
+	//	}
+	//	else if (i > Vertices.Num() - GridSizeX) //South row
+	//	{
+	//		nP = Vertices[i - GridSizeX];
+	//		cP = Vertices[i];
+	//		eP = Vertices[i + 1];
+	//		wP = Vertices[i - 1];
+	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2, eP.Z - wP.Z, 1 };
+	//	}
+	//	else
+	//	{
+	//		nP = Vertices[i - GridSizeX];
+	//		sP = Vertices[i + GridSizeX];
+	//		eP = Vertices[i + 1];
+	//		wP = Vertices[i - 1];
+	//		Normals[i] = FVector{ sP.Z - nP.Z, eP.Z - wP.Z, 1 };
+	//	}
+	//}
+	
 }
 
 //void ATerrainTile::AssignTriangles()

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "ProceduralMeshComponent.h"
-
+#include "Generators/MarchingCubes.h"
 #include "VectorTypes.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -84,5 +84,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Mesh")
 		bool CreateCollision;
 
+	FMarchingCubes MarchingCubes;
 
 };
