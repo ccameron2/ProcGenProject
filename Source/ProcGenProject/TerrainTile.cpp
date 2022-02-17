@@ -177,28 +177,11 @@ void ATerrainTile::CreateMesh()
 
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
-	//Calculate normals for textures
+	
 	//UKismetProceduralMeshLibrary* procLib;
 	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
-	//Normals = TArray<FVector>(MarchingCubes.Normals);
-
-
-	/*for (auto triangle : MarchingCubes.Triangles)
-	{
-		auto A = Vertices[triangle.A];
-		auto B = Vertices[triangle.B];
-		auto C = Vertices[triangle.C];
-		auto E1 = A - B;
-		auto E2 = C - B;
-		auto Normal = E1 ^ E2;
-		Normals.Push(Normal);
-	}
-	for (auto normal : Normals)
-	{
-		normal.Normalize();
-	}*/
-
+	//Calculate normals
 	CalculateNormals();
 
 	//Create Procedural Mesh Section with Marching Cubes data
@@ -206,11 +189,11 @@ void ATerrainTile::CreateMesh()
 	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 }
 
-static struct VertToTriMap
-{
-	FVector vertex;
-	TArray<FIndex3i> triangles;
-};
+//static struct VertToTriMap
+//{
+//	FVector vertex;
+//	TArray<FIndex3i> triangles;
+//};
 
 void ATerrainTile::CalculateNormals()
 {
@@ -218,7 +201,7 @@ void ATerrainTile::CalculateNormals()
 	Normals.Init({ 0,0,0 }, Vertices.Num());
 
 	// Map of vertex to triangles in Triangles array
-	// 
+
 	//TMultiMap<FVector3f, FIndex3i> VertToTriMap;
 
 	TArray<TArray<FIndex3i>> VertToTriMap;
@@ -280,121 +263,6 @@ void ATerrainTile::CalculateNormals()
 	{
 		normal.Normalize();
 	}
-
-	//for (int i = 0; i < Vertices.Num(); i++)
-	//{
-	//	if (i > Vertices.Num() - 3) { break; }
-	//	auto A = Vertices[i];
-	//	auto B = Vertices[i + 1];
-	//	auto C = Vertices[i + 2];
-	//	auto E1 = A - B;
-	//	auto E2 = C - B;
-	//	auto Normal = E1 ^ E2;	
-	//	Normals[i] += Normal;
-	//	Normals[i+1] += Normal;
-	//	Normals[i+2] += Normal;
-	//}
-
-	//for (int i = 0; i < Vertices.Num(); i += 3)
-	//{
-	//	if (i > Vertices.Num() - 3) { break; }
-	//	FVector edge1 = Vertices[i + 1] - Vertices[i + 2];
-	//	FVector edge2 = Vertices[i] - Vertices[i + 2];
-	//	FVector normal = FVector::CrossProduct(edge1, edge2);
-	//	normal.Normalize();
-	//	Normals[i] += normal;
-	//	Normals[i + 1] += normal;
-	//	Normals[i + 2] += normal; 
-	//}
-
-	//for (int i = 0; i < Triangles.Num(); i ++)
-	//{
-	//	if (i > Vertices.Num() - 3) { break; }
-	//	auto A = Vertices[i];
-	//	auto B = Vertices[i + 1];
-	//	auto C = Vertices[i + 2];
-	//	auto P = (B - A) ^ (C - A); //Cross product
-	//	Normals[i] += P;
-	//	Normals[i + 1] += P;
-	//	Normals[i + 2] += P;
-	//}
-	
-	//for (int i = 0; i < Vertices.Num(); i++)
-	//{
-	//	FVector nP = { 0,0,0 }; //North point
-	//	FVector sP = { 0,0,0 }; //South point
-	//	FVector eP = { 0,0,0 }; //East point
-	//	FVector wP = { 0,0,0 }; //West point
-	//	FVector cP = { 0,0,0 }; //Centre point
-	//	if (i == 0) //North West Corner
-	//	{
-	//		cP = Vertices[i];
-	//		sP = Vertices[i + GridSizeX];
-	//		eP = Vertices[i + 1];
-	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (eP.Z - cP.Z) * 2,1 };
-	//	}
-	//	else if (i == GridSizeX - 1) //North East Corner
-	//	{
-	//		cP = Vertices[i];
-	//		sP = Vertices[i + GridSizeX];
-	//		wP = Vertices[i - 1];
-	//		Normals[i] = FVector{ (sP.Z - cP.Z) * 2, (wP.Z - cP.Z) * 2, 1 };
-	//	}
-	//	else if (i == Vertices.Num() - GridSizeX) //South West Corner
-	//	{
-	//		cP = Vertices[i];
-	//		nP = Vertices[i - GridSizeX];
-	//		eP = Vertices[i + 1];
-	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2,(eP.Z - cP.Z) * 2, 1 };
-	//	}
-	//	else if (i == Vertices.Num() - 1) //South East Corner
-	//	{
-	//		cP = Vertices[i];
-	//		nP = Vertices[i - GridSizeX];
-	//		wP = Vertices[i - 1];
-	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2, (cP.Z - wP.Z) * 2, 1 };
-	//	}
-	//	else if (i < GridSizeX) //North Row
-	//	{
-	//		cP = Vertices[i];
-	//		sP = Vertices[i + GridSizeX];
-	//		eP = Vertices[i + 1];
-	//		wP = Vertices[i - 1];
-	//		Normals[i] = FVector{ (sP.Z - cP.Z) * 2, eP.Z - wP.Z, 1 };
-	//	}
-	//	else if (GridSizeX % i == 0) //West row
-	//	{
-	//		nP = Vertices[i - GridSizeX];
-	//		sP = Vertices[i + GridSizeX];
-	//		cP = Vertices[i];
-	//		eP = Vertices[i + 1];
-	//		Normals[i] = FVector{ sP.Z - nP.Z, (eP.Z - cP.Z) * 2, 1 };
-	//	}
-	//	else if (GridSizeX % i == 1) //East row
-	//	{
-	//		nP = Vertices[i - GridSizeX];
-	//		sP = Vertices[i + GridSizeX];
-	//		cP = Vertices[i];
-	//		wP = Vertices[i - 1];
-	//		Normals[i] = FVector{ sP.Z - nP.Z, (cP.Z - wP.Z) * 2, 1 };
-	//	}
-	//	else if (i > Vertices.Num() - GridSizeX) //South row
-	//	{
-	//		nP = Vertices[i - GridSizeX];
-	//		cP = Vertices[i];
-	//		eP = Vertices[i + 1];
-	//		wP = Vertices[i - 1];
-	//		Normals[i] = FVector{ (cP.Z - nP.Z) * 2, eP.Z - wP.Z, 1 };
-	//	}
-	//	else
-	//	{
-	//		nP = Vertices[i - GridSizeX];
-	//		sP = Vertices[i + GridSizeX];
-	//		eP = Vertices[i + 1];
-	//		wP = Vertices[i - 1];
-	//		Normals[i] = FVector{ sP.Z - nP.Z, eP.Z - wP.Z, 1 };
-	//	}
-	//}
 	
 }
 
