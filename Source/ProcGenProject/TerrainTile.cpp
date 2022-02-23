@@ -182,7 +182,7 @@ void ATerrainTile::CreateMesh()
 	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 	//Calculate normals
-	CalculateNormals();
+	//CalculateNormals();
 
 	//Create Procedural Mesh Section with Marching Cubes data
 	ProcMesh->ClearAllMeshSections();

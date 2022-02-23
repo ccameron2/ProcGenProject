@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include <math.h>
 #include "TerrainManager.h"
+#include "CustomWorker.h"
+#include <math.h>
+
 
 // Sets default values
 ATerrainManager::ATerrainManager()
@@ -15,11 +17,27 @@ ATerrainManager::ATerrainManager()
 void ATerrainManager::BeginPlay()
 {
 	Super::BeginPlay();
-	for (float i = 0; i < TileX; i++)
+	/*for (float i = 0; i < TileX; i++)
 	{
 		for (float j = 0; j < TileY; j++)
 		{
 			FVector Location(i * ChunkSize, j * ChunkSize, 0.0f);
+			FRotator Rotation(0.0f, 0.0f, 0.0f);
+			FActorSpawnParameters SpawnParams;
+			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
+			TileArray.Push(tile);
+		}
+	}*/
+	auto PlayerGridPosition = GetPlayerGridPosition();
+	PlayerGridPosition.X = round(PlayerGridPosition.X);
+	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
+	auto CurrentTileIndex = PlayerGridPosition.X + (PlayerGridPosition.Y * TileX);
+
+	for (int x = -TileX; x < TileX; x++)
+	{
+		for (int y = -TileY; y < TileY; y++)
+		{
+			FVector Location((PlayerGridPosition.X + x) * ChunkSize, (PlayerGridPosition.Y + y) * ChunkSize, 0.0f);
 			FRotator Rotation(0.0f, 0.0f, 0.0f);
 			FActorSpawnParameters SpawnParams;
 			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
@@ -38,8 +56,21 @@ FVector2D ATerrainManager::GetPlayerGridPosition()
 FVector2D ATerrainManager::GetTilePosition(int index)
 {
 	FVector TilePosition = TileArray[index]->GetActorLocation();
-	FVector TileGridPosition = TilePosition / ChunkSize * Scale;
+	FVector TileGridPosition = TilePosition / ChunkSize;
 	return FVector2D(TileGridPosition.X,TileGridPosition.Y);
+}
+
+
+bool ATerrainManager::IsAlreadyThere(FVector2D position)
+{
+	for (int i = 0; i < TileArray.Num(); i++)
+	{
+		if (GetTilePosition(i) == position)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 // Called every frame
@@ -49,8 +80,40 @@ void ATerrainManager::Tick(float DeltaTime)
 	auto PlayerGridPosition = GetPlayerGridPosition();
 	PlayerGridPosition.X = round(PlayerGridPosition.X);
 	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
-	auto CurrentTileIndex = PlayerGridPosition.X + (PlayerGridPosition.Y * TileX);
-	if (CurrentTileIndex > TileArray.Num() - TileX)
+	//auto CurrentTileIndex = PlayerGridPosition.X + (PlayerGridPosition.Y * TileX);
+
+	if (PlayerGridPosition != LastPlayerPosition)
+	{
+		for (int x = -TileX; x < TileX; x++)
+		{
+			for (int y = -TileY; y < TileY; y++)
+			{
+				FVector Location((PlayerGridPosition.X + x) * ChunkSize, (PlayerGridPosition.Y + y) * ChunkSize, 0.0f);
+				if (!IsAlreadyThere(FVector2D{ PlayerGridPosition.X + x,PlayerGridPosition.Y + y }))
+				{	
+					FRotator Rotation(0.0f, 0.0f, 0.0f);
+					FActorSpawnParameters SpawnParams;
+					ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
+/*					FCustomWorker* CustomWorker = new FCustomWorker(tile);	*/			
+					TileArray.Push(tile);
+					//if (CustomWorker)
+					//{
+					//	CustomWorker->InputReady = true;
+					//	if (CustomWorker->Init())
+					//	{
+					//		CustomWorker->Run();							
+					//	}
+					//}
+				}
+
+			}
+		}
+
+	}
+
+	LastPlayerPosition = PlayerGridPosition;
+
+	/*if (CurrentTileIndex > TileArray.Num() - TileX)
 	{
 		for (int i = 0; i < TileX; i++)
 		{
@@ -59,24 +122,8 @@ void ATerrainManager::Tick(float DeltaTime)
 			FActorSpawnParameters SpawnParams;
 			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
 			TileArray.Push(tile);
-		}	
+		}
 		return;
-	}
-	//auto TilePosition = GetTilePosition(CurrentTileIndex);
-	//if (PlayerGridPosition != TilePosition)
-	//{
-	//	//if (hasRun) { return; }
-
-	//	if (TileArray[CurrentTileIndex])
-	//	{
-
-	//	}
-	//	FVector Location((GetPlayerGridPosition().X) * ChunkSize, GetPlayerGridPosition().Y * ChunkSize, 0.0f);
-	//	FRotator Rotation(0.0f, 0.0f, 0.0f);
-	//	FActorSpawnParameters SpawnParams;
-	//	ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-	//	TileArray.Push(tile);
-	//	//hasRun = true;
-	//}
+	}*/
 }
 
