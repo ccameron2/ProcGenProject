@@ -103,6 +103,11 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 
 	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 8, 1);
 
+	if (perlinInput.Z < 1)
+	{
+		return 1;
+	}
+
 	if (perlinInput.Z >= 640)
 	{
 		return density;

@@ -22,7 +22,6 @@ FCustomWorker::~FCustomWorker()
 bool FCustomWorker::Init()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Thread Initialised"));
-
 	return true;
 }
 

@@ -94,7 +94,7 @@ void ATerrainManager::Tick(float DeltaTime)
 					FRotator Rotation(0.0f, 0.0f, 0.0f);
 					FActorSpawnParameters SpawnParams;
 					ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-/*					FCustomWorker* CustomWorker = new FCustomWorker(tile);	*/			
+					//FCustomWorker* CustomWorker = new FCustomWorker(tile);				
 					TileArray.Push(tile);
 					//if (CustomWorker)
 					//{
