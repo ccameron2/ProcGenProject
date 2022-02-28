@@ -81,8 +81,8 @@ public:
 	UPROPERTY()
 		TArray <FProcMeshTangent> Tangents;
 
-	UPROPERTY(EditAnywhere, Category = "Mesh")
-		bool CreateCollision;
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		bool CreateCollision = true;
 
 	FMarchingCubes MarchingCubes;
 

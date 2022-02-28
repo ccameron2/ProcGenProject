@@ -12,7 +12,7 @@ ATerrainTile::ATerrainTile()
 
 	//Create Procedural mesh and attach to root component
 	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
-	ProcMesh->SetupAttachment(RootComponent);
+	SetRootComponent(ProcMesh);
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
 	ProcMesh->SetMaterial(0, Material);
@@ -22,7 +22,7 @@ ATerrainTile::ATerrainTile()
 void ATerrainTile::BeginPlay()
 {
 	Super::BeginPlay();
-	CreateMesh();
+	//CreateMesh();
 }
 
 //void ATerrainTile::CreateMesh()

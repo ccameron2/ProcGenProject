@@ -17,6 +17,7 @@ ATerrainManager::ATerrainManager()
 void ATerrainManager::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	/*for (float i = 0; i < TileX; i++)
 	{
 		for (float j = 0; j < TileY; j++)
@@ -28,6 +29,7 @@ void ATerrainManager::BeginPlay()
 			TileArray.Push(tile);
 		}
 	}*/
+
 	auto PlayerGridPosition = GetPlayerGridPosition();
 	PlayerGridPosition.X = round(PlayerGridPosition.X);
 	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
@@ -41,6 +43,15 @@ void ATerrainManager::BeginPlay()
 			FRotator Rotation(0.0f, 0.0f, 0.0f);
 			FActorSpawnParameters SpawnParams;
 			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
+			FCustomWorker* CustomWorker = new FCustomWorker(tile);
+			if (CustomWorker)
+			{
+				CustomWorker->InputReady = true;
+				if (CustomWorker->Init())
+				{
+					CustomWorker->Run();
+				}
+			}
 			TileArray.Push(tile);
 		}
 	}
@@ -94,16 +105,16 @@ void ATerrainManager::Tick(float DeltaTime)
 					FRotator Rotation(0.0f, 0.0f, 0.0f);
 					FActorSpawnParameters SpawnParams;
 					ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-					//FCustomWorker* CustomWorker = new FCustomWorker(tile);				
+					/*FCustomWorker* CustomWorker = new FCustomWorker(tile);								
+					if (CustomWorker)
+					{
+						CustomWorker->InputReady = true;
+						if (CustomWorker->Init())
+						{
+							CustomWorker->Run();							
+						}
+					}*/
 					TileArray.Push(tile);
-					//if (CustomWorker)
-					//{
-					//	CustomWorker->InputReady = true;
-					//	if (CustomWorker->Init())
-					//	{
-					//		CustomWorker->Run();							
-					//	}
-					//}
 				}
 
 			}
