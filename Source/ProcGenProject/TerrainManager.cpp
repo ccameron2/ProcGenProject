@@ -43,7 +43,7 @@ void ATerrainManager::BeginPlay()
 			FRotator Rotation(0.0f, 0.0f, 0.0f);
 			FActorSpawnParameters SpawnParams;
 			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-			FCustomWorker* CustomWorker = new FCustomWorker(tile);
+			/*FCustomWorker* CustomWorker = new FCustomWorker(tile);
 			if (CustomWorker)
 			{
 				CustomWorker->InputReady = true;
@@ -51,7 +51,7 @@ void ATerrainManager::BeginPlay()
 				{
 					CustomWorker->Run();
 				}
-			}
+			}*/
 			TileArray.Push(tile);
 		}
 	}
@@ -87,6 +87,9 @@ bool ATerrainManager::IsAlreadyThere(FVector2D position)
 // Called every frame
 void ATerrainManager::Tick(float DeltaTime)
 {
+	//check input ready
+	//then run create mesh section
+
 	Super::Tick(DeltaTime);
 	auto PlayerGridPosition = GetPlayerGridPosition();
 	PlayerGridPosition.X = round(PlayerGridPosition.X);

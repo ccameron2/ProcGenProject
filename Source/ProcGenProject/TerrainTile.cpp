@@ -22,7 +22,7 @@ ATerrainTile::ATerrainTile()
 void ATerrainTile::BeginPlay()
 {
 	Super::BeginPlay();
-	//CreateMesh();
+	CreateMesh();
 }
 
 //void ATerrainTile::CreateMesh()
@@ -182,12 +182,11 @@ void ATerrainTile::CreateMesh()
 
 	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
-	
 	//UKismetProceduralMeshLibrary* procLib;
 	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 	//Calculate normals
-	//CalculateNormals();
+	CalculateNormals();
 
 	//Create Procedural Mesh Section with Marching Cubes data
 	ProcMesh->ClearAllMeshSections();
@@ -202,59 +201,40 @@ void ATerrainTile::CreateMesh()
 
 void ATerrainTile::CalculateNormals()
 {
-
 	Normals.Init({ 0,0,0 }, Vertices.Num());
 
 	// Map of vertex to triangles in Triangles array
-
-	//TMultiMap<FVector3f, FIndex3i> VertToTriMap;
-
-	TArray<TArray<FIndex3i>> VertToTriMap;
-	VertToTriMap.Init(TArray<FIndex3i>{	FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 },
-										FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }, 
-										FIndex3i{ 0,0,0 }, FIndex3i{ 0,0,0 }}, 
+	TArray<TArray<int32>> VertToTriMap;
+	VertToTriMap.Init(TArray<int32>{	int32{ -1 }, int32{ -1 }, int32{ -1 },
+										int32{ -1 }, int32{ -1 }, int32{ -1 },
+										int32{ -1 }, int32{ -1 }},
 										Vertices.Num());
 
-	//For each vertex check which triangles it is shared by and add to a map
-	for (int vertex = 0; vertex < Vertices.Num(); vertex++)
+	// For each triangle for each vertex add triangle to vertex array entry
+	for (int i = 0; i < Triangles.Num(); i++)
 	{
-		int counter = 0;
-		for (auto& triangle : MarchingCubes.Triangles)
+		for (int j = 0; j < 8; j++)
 		{
-			if (Vertices[vertex] == Vertices[triangle.A] || 
-				Vertices[vertex] == Vertices[triangle.B] ||
-				Vertices[vertex] == Vertices[triangle.C])
+			if (VertToTriMap[Triangles[i]][j] < 0)
 			{
-				if (counter >= 8){ break; } //If 8 triangles are shared move to next vertex
-				for (int i = 0; i < VertToTriMap[vertex].Num(); i++)
-				{
-					if (VertToTriMap[vertex][i] != triangle)
-					{
-						VertToTriMap[vertex][i] = triangle;
-						counter++;
-						break;
-					}
-				}
-				//VertToTriMap.AddUnique(Vertices[vertex], triangle);
+				VertToTriMap[Triangles[i]][j] = i / 3;
 			}
-		}
+		}		
 	}
-
-
+	
 	//For each vertex collect the triangles that share it and calculate the face normal
 	for (int i = 0; i < Vertices.Num(); i++)
 	{
-		TArray<FIndex3i> sharedTriangles;
-		for (int j = 0; j < VertToTriMap[i].Num(); j++)
-		{
-			sharedTriangles.Push(VertToTriMap[i][j]);
-		}
-		//VertToTriMap.MultiFind(Vertices[i], sharedTriangles);
-		for (auto& triangle : sharedTriangles)
-		{			
-			auto A = Vertices[triangle.A];
-			auto B = Vertices[triangle.B];
-			auto C = Vertices[triangle.C];
+		for (auto& triangle : VertToTriMap[i])
+		{	
+			//This shouldnt happen
+			if (triangle < 0)
+			{
+				continue;
+			}			
+			auto A = Vertices[MarchingCubes.Triangles[triangle].A];
+			auto B = Vertices[MarchingCubes.Triangles[triangle].B];
+			auto C = Vertices[MarchingCubes.Triangles[triangle].C];
 			auto E1 = A - B;
 			auto E2 = C - B;
 			auto Normal = E1 ^ E2;
