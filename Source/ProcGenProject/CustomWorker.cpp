@@ -1,17 +1,20 @@
 #include "CustomWorker.h"
+#include "TerrainTile.h"
+#include "Generators/MarchingCubes.h"
+#include "Misc/ScopeLock.h"
 
 #pragma region Main Thread
 
-FCustomWorker::FCustomWorker(ATerrainTile* tile)
+FCustomWorker::FCustomWorker(FAxisAlignedBox3d boundingBox)
 {
 	Thread = FRunnableThread::Create(this, TEXT("Thread"));
-	Tile = tile;
+	BoundingBox = boundingBox;
 }
 
 FCustomWorker::~FCustomWorker()
 {
 	if (Thread)
-	{		
+	{	
 		//Wait for finish and destroy
 		Thread->Kill();
 		delete Thread;
@@ -31,9 +34,21 @@ uint32 FCustomWorker::Run()
 	{
 		if (InputReady)
 		{
-			Tile->CreateMesh();
+			//Marching Cubes
+			FMarchingCubes MarchingCubes;
+			MarchingCubes.Bounds = BoundingBox;
+			MarchingCubes.bParallelCompute = true;
+			MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
+			MarchingCubes.CubeSize = 8;
+			MarchingCubes.IsoValue = 0;
+			MarchingCubes.Generate();
+			mcTriangles = MarchingCubes.Triangles;
+			mcVertices = MarchingCubes.Vertices;
+			UE_LOG(LogTemp, Warning, TEXT("Thread Finished"));
 			InputReady = false;
 			FPlatformProcess::Sleep(0.01f);
+			
+			RunThread = false;
 		}
 	}
 	return 0;

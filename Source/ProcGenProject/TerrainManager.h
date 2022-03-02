@@ -29,6 +29,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int Scale = 100;
 
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int seed = 69420;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		bool UseCustomMultithreading = false;
+
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);
 	bool IsAlreadyThere(FVector2D position);

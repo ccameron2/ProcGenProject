@@ -2,7 +2,9 @@
 #include "TerrainTile.h"
 #include <functional>
 #include "KismetProceduralMeshLibrary.h"
-#include "HAL/Runnable.h"
+
+FCustomWorker* mcWorker = nullptr;
+int ATerrainTile::seed = 0;
 
 // Sets default values
 ATerrainTile::ATerrainTile()
@@ -16,13 +18,13 @@ ATerrainTile::ATerrainTile()
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
 	ProcMesh->SetMaterial(0, Material);
+
 }
 
 // Called when the game starts or when spawned
 void ATerrainTile::BeginPlay()
 {
 	Super::BeginPlay();
-	CreateMesh();
 }
 
 //void ATerrainTile::CreateMesh()
@@ -69,6 +71,8 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	
 	int noiseScale = 50;
 
+//	perlinInput += FVector{ float(seed),0,float(seed) };
+
 	//Scale noise input
 	FVector3d noiseInput = perlinInput / noiseScale;
 
@@ -96,12 +100,12 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
 	
 	//Add 2D noise
-	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),6,0.04);
+	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),6,0.035);
 
 
 	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
 
-	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 8, 1);
+	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 6, 1);
 
 	if (perlinInput.Z < 1)//Cave floors
 	{
@@ -122,7 +126,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 		//{
 		//	density2 += 0.2;
 		//}
-		return FMath::Lerp(density2 + 0.1f, density, (perlinInput.Z - 384) / (640 - 384));
+		return FMath::Lerp(density2 + 0.15f, density, (perlinInput.Z - 384) / (640 - 384));
 	}
 }
 
@@ -149,48 +153,65 @@ float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, f
 
 void ATerrainTile::CreateMesh()
 {
-	//Marching Cubes
-	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
-	MarchingCubes.Bounds = BoundingBox;
-	MarchingCubes.bParallelCompute = true;
-	//MarchingCubes.CellDimensions = FVector3i{ 100,100,100 };
-	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-	MarchingCubes.CubeSize = 8;
-	MarchingCubes.IsoValue = 0;
-	MarchingCubes.Generate();
-
 	Triangles.Empty();
 	Vertices.Empty();
 	Normals.Empty();
 	Tangents.Empty();
 	UV0.Empty();
-
-	//Convert FIndex3i to Int32
-	for (int i = 0; i < MarchingCubes.Triangles.Num(); i++)
+	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
+	if (UseCustomMultithreading)
 	{
-		Triangles.Push(int32(MarchingCubes.Triangles[i].A));
-		Triangles.Push(int32(MarchingCubes.Triangles[i].B));
-		Triangles.Push(int32(MarchingCubes.Triangles[i].C));
+		mcWorker = new FCustomWorker(BoundingBox);
+		if (mcWorker)
+		{
+			mcWorker->InputReady = true;
+			if (mcWorker->Init())
+			{
+				mcWorker->Run();
+			}
+		}
 	}
-
-	//Scale the vertices
-	for (int i = 0; i < MarchingCubes.Vertices.Num(); i++)
+	else
 	{
-		MarchingCubes.Vertices[i] *= Scale;
+		//Marching Cubes
+		FMarchingCubes MarchingCubes;
+		MarchingCubes.Bounds = BoundingBox;
+		MarchingCubes.bParallelCompute = true;
+		MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
+		MarchingCubes.CubeSize = 8;
+		MarchingCubes.IsoValue = 0;
+		MarchingCubes.Generate();
+
+		MCTriangles = MarchingCubes.Triangles;
+		MCVertices = MarchingCubes.Vertices;
+
+		if (MCVertices.Num() > 0)
+		{
+			//Convert FIndex3i to Int32
+			for (int i = 0; i < MCTriangles.Num(); i++)
+			{
+				Triangles.Push(int32(MCTriangles[i].A));
+				Triangles.Push(int32(MCTriangles[i].B));
+				Triangles.Push(int32(MCTriangles[i].C));
+			}
+
+			//Scale the vertices
+			for (int i = 0; i < MCVertices.Num(); i++)
+			{
+				MCVertices[i] *= Scale;
+			}
+			Vertices = TArray<FVector>(MCVertices);
+
+			//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
+
+			//Calculate normals
+			CalculateNormals();
+
+			//Create Procedural Mesh Section with Marching Cubes data
+			ProcMesh->ClearAllMeshSections();
+			ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+		}
 	}
-	Vertices = TArray<FVector>(MarchingCubes.Vertices);
-
-	UV0 = TArray<FVector2D>(MarchingCubes.UVs);
-
-	//UKismetProceduralMeshLibrary* procLib;
-	//procLib->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
-
-	//Calculate normals
-	CalculateNormals();
-
-	//Create Procedural Mesh Section with Marching Cubes data
-	ProcMesh->ClearAllMeshSections();
-	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 }
 
 //static struct VertToTriMap
@@ -215,6 +236,10 @@ void ATerrainTile::CalculateNormals()
 	{
 		for (int j = 0; j < 8; j++)
 		{
+			if (Triangles[i] < 0 || Triangles[i] > Triangles.Num())
+			{
+				continue;
+			}
 			if (VertToTriMap[Triangles[i]][j] < 0)
 			{
 				VertToTriMap[Triangles[i]][j] = i / 3;
@@ -232,9 +257,9 @@ void ATerrainTile::CalculateNormals()
 			{
 				continue;
 			}			
-			auto A = Vertices[MarchingCubes.Triangles[triangle].A];
-			auto B = Vertices[MarchingCubes.Triangles[triangle].B];
-			auto C = Vertices[MarchingCubes.Triangles[triangle].C];
+			auto A = Vertices[MCTriangles[triangle].A];
+			auto B = Vertices[MCTriangles[triangle].B];
+			auto C = Vertices[MCTriangles[triangle].C];
 			auto E1 = A - B;
 			auto E2 = C - B;
 			auto Normal = E1 ^ E2;
@@ -251,6 +276,12 @@ void ATerrainTile::CalculateNormals()
 	
 }
 
+void ATerrainTile::Init(int inSeed, bool useCustomMultithreading)
+{
+	seed = inSeed;
+	UseCustomMultithreading = useCustomMultithreading;
+}
+
 //void ATerrainTile::AssignTriangles()
 //{
 //	Triangles.Init(0, GridSizeX * GridSizeY * 6);
@@ -262,7 +293,51 @@ void ATerrainTile::CalculateNormals()
 void ATerrainTile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if (UseCustomMultithreading)
+	{
+		if (mcWorker)
+		{
+			if (mcWorker->InputReady == false)
+			{
+				//Get data from multithreading worker
+				MCVertices = mcWorker->mcVertices;
+				MCTriangles = mcWorker->mcTriangles;
 
+				if (MCVertices.Num() > 0)
+				{
+					//Convert FIndex3i to Int32
+					for (int i = 0; i < MCTriangles.Num(); i++)
+					{
+						Triangles.Push(int32(MCTriangles[i].A));
+						Triangles.Push(int32(MCTriangles[i].B));
+						Triangles.Push(int32(MCTriangles[i].C));
+					}
+
+					//Scale the vertices
+					for (int i = 0; i < MCVertices.Num(); i++)
+					{
+						MCVertices[i] *= Scale;
+					}
+					Vertices = TArray<FVector>(MCVertices);
+
+					//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
+
+					//Calculate normals
+					CalculateNormals();
+
+					//Create Procedural Mesh Section with Marching Cubes data
+					ProcMesh->ClearAllMeshSections();
+					ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+					if (mcWorker)
+					{
+						delete mcWorker;
+					}
+				}
+			}
+		}
+	}
+	
 }
 
 void ATerrainTile::OnConstruction(const FTransform& Transform)

@@ -6,7 +6,7 @@
 class PROCGENPROJECT_API FCustomWorker : public FRunnable
 {
 public:
-	FCustomWorker(ATerrainTile* tile);
+	FCustomWorker(FAxisAlignedBox3d boundingBox);
 	virtual ~FCustomWorker();
 
 	//Overridden from parent
@@ -15,9 +15,12 @@ public:
 	void Stop() override; //Clean
 
 	FRunnableThread* Thread;
+	FCriticalSection Lock_Location;
 	bool RunThread;
 	bool InputReady;
-private:
+	FAxisAlignedBox3d BoundingBox;
+	TArray<FIndex3i> mcTriangles;
+	TArray<FVector3d> mcVertices;
 
-	ATerrainTile* Tile;
+private:
 };

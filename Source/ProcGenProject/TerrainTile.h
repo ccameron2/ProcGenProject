@@ -7,6 +7,8 @@
 #include "VectorTypes.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "HAL/Runnable.h"
+#include "CustomWorker.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -35,6 +37,11 @@ public:
 
 	//void AssignTriangles();
 	//void AssignColours();
+
+	void Init(int inSeed, bool useCustomMultithreading);
+
+	static int seed;
+	bool UseCustomMultithreading;
 
 	UFUNCTION()
 		void CreateMesh();
@@ -84,6 +91,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		bool CreateCollision = true;
 
-	FMarchingCubes MarchingCubes;
+	TArray<FIndex3i> MCTriangles;
+
+	TArray<FVector3d> MCVertices;
 
 };

@@ -2,6 +2,7 @@
 
 #include "TerrainManager.h"
 #include "CustomWorker.h"
+#include "Kismet\GameplayStatics.h"
 #include <math.h>
 
 
@@ -41,17 +42,14 @@ void ATerrainManager::BeginPlay()
 		{
 			FVector Location((PlayerGridPosition.X + x) * ChunkSize, (PlayerGridPosition.Y + y) * ChunkSize, 0.0f);
 			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			FActorSpawnParameters SpawnParams;
-			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-			/*FCustomWorker* CustomWorker = new FCustomWorker(tile);
-			if (CustomWorker)
-			{
-				CustomWorker->InputReady = true;
-				if (CustomWorker->Init())
-				{
-					CustomWorker->Run();
-				}
-			}*/
+			//FActorSpawnParameters SpawnParams;
+			//ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
+			UWorld* World = GetWorld();
+			FTransform SpawnParams(Rotation, Location);
+			ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(ATerrainTile::StaticClass(), SpawnParams);
+			tile->Init(seed,UseCustomMultithreading);
+			tile->FinishSpawning(SpawnParams);
+			tile->CreateMesh();
 			TileArray.Push(tile);
 		}
 	}
@@ -87,14 +85,10 @@ bool ATerrainManager::IsAlreadyThere(FVector2D position)
 // Called every frame
 void ATerrainManager::Tick(float DeltaTime)
 {
-	//check input ready
-	//then run create mesh section
-
 	Super::Tick(DeltaTime);
 	auto PlayerGridPosition = GetPlayerGridPosition();
 	PlayerGridPosition.X = round(PlayerGridPosition.X);
 	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
-	//auto CurrentTileIndex = PlayerGridPosition.X + (PlayerGridPosition.Y * TileX);
 
 	if (PlayerGridPosition != LastPlayerPosition)
 	{
@@ -106,17 +100,12 @@ void ATerrainManager::Tick(float DeltaTime)
 				if (!IsAlreadyThere(FVector2D{ PlayerGridPosition.X + x,PlayerGridPosition.Y + y }))
 				{	
 					FRotator Rotation(0.0f, 0.0f, 0.0f);
-					FActorSpawnParameters SpawnParams;
-					ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-					/*FCustomWorker* CustomWorker = new FCustomWorker(tile);								
-					if (CustomWorker)
-					{
-						CustomWorker->InputReady = true;
-						if (CustomWorker->Init())
-						{
-							CustomWorker->Run();							
-						}
-					}*/
+					UWorld* World = GetWorld();
+					FTransform SpawnParams(Rotation, Location);
+					ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(ATerrainTile::StaticClass(), SpawnParams);
+					tile->Init(seed, UseCustomMultithreading);
+					tile->FinishSpawning(SpawnParams);
+					tile->CreateMesh();
 					TileArray.Push(tile);
 				}
 
