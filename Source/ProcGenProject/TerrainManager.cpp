@@ -47,7 +47,7 @@ void ATerrainManager::BeginPlay()
 			UWorld* World = GetWorld();
 			FTransform SpawnParams(Rotation, Location);
 			ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(ATerrainTile::StaticClass(), SpawnParams);
-			tile->Init(seed,UseCustomMultithreading);
+			tile->Init(Seed,UseCustomMultithreading, Octaves,SurfaceFrequency,CaveFrequency,NoiseScale, SurfaceLevel, CaveLevel);
 			tile->FinishSpawning(SpawnParams);
 			tile->CreateMesh();
 			TileArray.Push(tile);
@@ -103,7 +103,7 @@ void ATerrainManager::Tick(float DeltaTime)
 					UWorld* World = GetWorld();
 					FTransform SpawnParams(Rotation, Location);
 					ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(ATerrainTile::StaticClass(), SpawnParams);
-					tile->Init(seed, UseCustomMultithreading);
+					tile->Init(Seed, UseCustomMultithreading, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale, SurfaceLevel, CaveLevel);
 					tile->FinishSpawning(SpawnParams);
 					tile->CreateMesh();
 					TileArray.Push(tile);

@@ -38,11 +38,17 @@ public:
 	//void AssignTriangles();
 	//void AssignColours();
 
-	void Init(int inSeed, bool useCustomMultithreading);
+	void Init(float seed, bool useCustomMultithreading, int octaves, float surfaceFrequency,
+				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel);
 
-	static int seed;
+	static float Seed;
 	bool UseCustomMultithreading;
-
+	static int Octaves;
+	static float SurfaceFrequency;
+	static float CaveFrequency;
+	static int NoiseScale;
+	static int SurfaceLevel;
+	static int CaveLevel;
 	UFUNCTION()
 		void CreateMesh();
 

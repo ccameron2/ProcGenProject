@@ -4,7 +4,13 @@
 #include "KismetProceduralMeshLibrary.h"
 
 FCustomWorker* mcWorker = nullptr;
-int ATerrainTile::seed = 0;
+float ATerrainTile::Seed = 0;
+int ATerrainTile::Octaves = 0;
+float ATerrainTile::SurfaceFrequency = 0;
+float ATerrainTile::CaveFrequency = 0;
+int ATerrainTile::NoiseScale = 0;
+int ATerrainTile::SurfaceLevel = 0;
+int ATerrainTile::CaveLevel = 0;
 
 // Sets default values
 ATerrainTile::ATerrainTile()
@@ -48,96 +54,61 @@ void ATerrainTile::BeginPlay()
 //	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 //}
 
-//void ATerrainTile::AssignColours()
-//{
-//	VertexColour.Init(FColor::Green, GridSizeX * GridSizeY);
-//	for (int i = 0; i < GridSizeX * GridSizeY; i++)
-//	{
-//		if (Vertices[i].Z > 10)
-//		{
-//			VertexColour[i] = FColor::Silver;
-//		}
-//		else
-//		{
-//			VertexColour[i] = FColor::Green;
-//		}
-//	}
-//}
+void ATerrainTile::Init(float seed, bool useCustomMultithreading, int octaves, float surfaceFrequency,
+							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel)
+{
+	Seed = seed;
+	UseCustomMultithreading = useCustomMultithreading;
+	Octaves = octaves;
+	SurfaceFrequency = surfaceFrequency;
+	CaveFrequency = caveFrequency;
+	NoiseScale = noiseScale;
+	SurfaceLevel = surfaceLevel;
+	CaveLevel = caveLevel;
+}
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 {
-	//double test = double(FractalBrownianMotion(FVector(perlinInput))) * 10000;
-	//return test;
-	
-	int noiseScale = 50;
-
-//	perlinInput += FVector{ float(seed),0,float(seed) };
-
 	//Scale noise input
-	FVector3d noiseInput = perlinInput / noiseScale;
-
-	//double test2DPerlin = FMath::PerlinNoise2D(FVector2D(perlinInput.X, perlinInput.Z));
-	//double test = FractalBrownianMotion(FVector(perlinInput));
+	FVector3d noiseInput = (perlinInput + FVector{ Seed,Seed,0 }) / NoiseScale;
 
 	float density = ( -noiseInput.Z / 14) + 1;
-	//float density = 0;
-	
-	//if (perlinInput.Z > 1.5)
-	//{
-	//	density = 0;
-	//	//density -= 0.5;
-	//}
-
-	//if (perlinInput.X > FMath::PerlinNoise2D(FVector2D(perlinInput.X + 5654, perlinInput.Y + 5654)) && perlinInput.Y > FMath::PerlinNoise2D(FVector2D(perlinInput.X + 5654, perlinInput.Y + 5654)))
-	//{
-	//	if (FMath::PerlinNoise2D(FVector2D(perlinInput.X, perlinInput.Y)) > 0)
-	//	{
-	//		density = -perlinInput.Z + 1;
-	//	}
-	//}
 
 	//Add 3D noise partially
 	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
 	
 	//Add 2D noise
-	density += FractalBrownianMotion(FVector(noiseInput.X, noiseInput.Y, 0),6,0.035);
+	density += FractalBrownianMotion(FVector(noiseInput.X / 10, noiseInput.Y / 10, 0), Octaves, SurfaceFrequency);
 
 
 	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
 
-	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), 6, 1);
+	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), Octaves, CaveFrequency);
 
 	if (perlinInput.Z < 1)//Cave floors
 	{
 		return 1;
 	}
 
-	if (perlinInput.Z >= 640)
+	if (perlinInput.Z >= SurfaceLevel)//640
 	{
 		return density;
 	}
-	else if(perlinInput.Z < 384)
+	else if(perlinInput.Z < CaveLevel)//384
 	{
 		return density2;
 	}
 	else
 	{
-		//if (perlinInput.Z > 512)
-		//{
-		//	density2 += 0.2;
-		//}
-		return FMath::Lerp(density2 + 0.15f, density, (perlinInput.Z - 384) / (640 - 384));
+		return FMath::Lerp(density2 + 0.1f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
 	}
 }
 
 float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, float frequency)
 {
 	//The book of shaders
-
 	float result = 0;
 	float amplitude = 0.5;
-	//float frequency = 0.5;
-	//float octaves = 6;
 	float lacunarity = 2.0;
 	float gain = 0.5;
 
@@ -214,32 +185,21 @@ void ATerrainTile::CreateMesh()
 	}
 }
 
-//static struct VertToTriMap
-//{
-//	FVector vertex;
-//	TArray<FIndex3i> triangles;
-//};
-
 void ATerrainTile::CalculateNormals()
 {
 	Normals.Init({ 0,0,0 }, Vertices.Num());
 
 	// Map of vertex to triangles in Triangles array
 	TArray<TArray<int32>> VertToTriMap;
-	VertToTriMap.Init(TArray<int32>{	int32{ -1 }, int32{ -1 }, int32{ -1 },
-										int32{ -1 }, int32{ -1 }, int32{ -1 },
-										int32{ -1 }, int32{ -1 }},
-										Vertices.Num());
-
+	VertToTriMap.Init(TArray<int32>{ int32{ -1 }, int32{ -1 }, int32{ -1 },
+									 int32{ -1 }, int32{ -1 }, int32{ -1 },
+									 int32{ -1 }, int32{ -1 } }, Vertices.Num());
+									 
 	// For each triangle for each vertex add triangle to vertex array entry
 	for (int i = 0; i < Triangles.Num(); i++)
 	{
 		for (int j = 0; j < 8; j++)
 		{
-			if (Triangles[i] < 0 || Triangles[i] > Triangles.Num())
-			{
-				continue;
-			}
 			if (VertToTriMap[Triangles[i]][j] < 0)
 			{
 				VertToTriMap[Triangles[i]][j] = i / 3;
@@ -276,11 +236,7 @@ void ATerrainTile::CalculateNormals()
 	
 }
 
-void ATerrainTile::Init(int inSeed, bool useCustomMultithreading)
-{
-	seed = inSeed;
-	UseCustomMultithreading = useCustomMultithreading;
-}
+
 
 //void ATerrainTile::AssignTriangles()
 //{

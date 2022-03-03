@@ -30,10 +30,28 @@ public:
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int seed = 69420;
+		float Seed = 69420;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		bool UseCustomMultithreading = false;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int Octaves = 10;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		float SurfaceFrequency = 0.35;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		float CaveFrequency = 0.85;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int NoiseScale = 50;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int SurfaceLevel = 640;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int CaveLevel = 384;
 
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);
