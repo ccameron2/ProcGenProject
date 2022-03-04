@@ -48,10 +48,10 @@ public:
 		int NoiseScale = 50;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int SurfaceLevel = 640;
+		int SurfaceLevel = 1000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int CaveLevel = 384;
+		int CaveLevel = 800;
 
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);

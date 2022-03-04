@@ -68,7 +68,7 @@ public:
 		int GridSizeY = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 1024;
+		int GridSizeZ = 1600;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		FVector2D ChunkPos = { 0,0 };
