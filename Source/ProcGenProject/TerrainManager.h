@@ -30,7 +30,7 @@ public:
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		float Seed = 69420;
+		float Seed = 2496;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		bool UseCustomMultithreading = false;
@@ -42,7 +42,7 @@ public:
 		float SurfaceFrequency = 0.35;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		float CaveFrequency = 0.85;
+		float CaveFrequency = 1;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		int NoiseScale = 50;
@@ -51,13 +51,22 @@ public:
 		int SurfaceLevel = 1000;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int CaveLevel = 800;
+		int CaveLevel = 600;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int SurfaceNoiseScale = 18;
+
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		int CaveNoiseScale = 6;
 
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);
 	bool IsAlreadyThere(FVector2D position);
 	bool hasRun = false;
 	FVector2D LastPlayerPosition = { 0,0 };
+
+	UPROPERTY(EditAnywhere, Category = "Procgen")
+		TSubclassOf<ATerrainTile> TerrainClass;
 
 protected:
 	// Called when the game starts or when spawned

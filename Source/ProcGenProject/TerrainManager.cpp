@@ -46,8 +46,9 @@ void ATerrainManager::BeginPlay()
 			//ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
 			UWorld* World = GetWorld();
 			FTransform SpawnParams(Rotation, Location);
-			ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(ATerrainTile::StaticClass(), SpawnParams);
-			tile->Init(Seed,UseCustomMultithreading, Octaves,SurfaceFrequency,CaveFrequency,NoiseScale, SurfaceLevel, CaveLevel);
+			ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
+			tile->Init(Seed,UseCustomMultithreading, Octaves,SurfaceFrequency,CaveFrequency,
+						NoiseScale, SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale);
 			tile->FinishSpawning(SpawnParams);
 			tile->CreateMesh();
 			TileArray.Push(tile);
@@ -102,8 +103,9 @@ void ATerrainManager::Tick(float DeltaTime)
 					FRotator Rotation(0.0f, 0.0f, 0.0f);
 					UWorld* World = GetWorld();
 					FTransform SpawnParams(Rotation, Location);
-					ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(ATerrainTile::StaticClass(), SpawnParams);
-					tile->Init(Seed, UseCustomMultithreading, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale, SurfaceLevel, CaveLevel);
+					ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
+					tile->Init(Seed, UseCustomMultithreading, Octaves, SurfaceFrequency, CaveFrequency, 
+								NoiseScale, SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale);
 					tile->FinishSpawning(SpawnParams);
 					tile->CreateMesh();
 					TileArray.Push(tile);

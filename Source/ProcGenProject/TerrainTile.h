@@ -35,11 +35,13 @@ public:
 	
 	void CalculateNormals();
 
+	void CreateTrees();
+
 	//void AssignTriangles();
 	//void AssignColours();
 
 	void Init(float seed, bool useCustomMultithreading, int octaves, float surfaceFrequency,
-				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel);
+				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale);
 
 	static float Seed;
 	bool UseCustomMultithreading;
@@ -49,6 +51,9 @@ public:
 	static int NoiseScale;
 	static int SurfaceLevel;
 	static int CaveLevel;
+	static int SurfaceNoiseScale;
+	static int CaveNoiseScale;
+
 	UFUNCTION()
 		void CreateMesh();
 
@@ -100,5 +105,10 @@ public:
 	TArray<FIndex3i> MCTriangles;
 
 	TArray<FVector3d> MCVertices;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		TSubclassOf<class ATree> TreeClass;
+
+	TArray<ATree*> TreeList;
 
 };

@@ -2,6 +2,7 @@
 #include "TerrainTile.h"
 #include <functional>
 #include "KismetProceduralMeshLibrary.h"
+#include "Tree.h"
 
 FCustomWorker* mcWorker = nullptr;
 float ATerrainTile::Seed = 0;
@@ -11,6 +12,9 @@ float ATerrainTile::CaveFrequency = 0;
 int ATerrainTile::NoiseScale = 0;
 int ATerrainTile::SurfaceLevel = 0;
 int ATerrainTile::CaveLevel = 0;
+int ATerrainTile::SurfaceNoiseScale = 0;
+int ATerrainTile::CaveNoiseScale = 0;
+
 
 // Sets default values
 ATerrainTile::ATerrainTile()
@@ -55,7 +59,7 @@ void ATerrainTile::BeginPlay()
 //}
 
 void ATerrainTile::Init(float seed, bool useCustomMultithreading, int octaves, float surfaceFrequency,
-							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel)
+							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale)
 {
 	Seed = seed;
 	UseCustomMultithreading = useCustomMultithreading;
@@ -65,6 +69,8 @@ void ATerrainTile::Init(float seed, bool useCustomMultithreading, int octaves, f
 	NoiseScale = noiseScale;
 	SurfaceLevel = surfaceLevel;
 	CaveLevel = caveLevel;
+	SurfaceNoiseScale = surfaceNoiseScale;
+	CaveNoiseScale = caveNoiseScale;
 }
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
@@ -72,18 +78,18 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//Scale noise input
 	FVector3d noiseInput = (perlinInput + FVector{ Seed,Seed,0 }) / NoiseScale;
 
-	float density = ( -noiseInput.Z / 22 ) + 1;
+	float density = ( -noiseInput.Z / 23 ) + 1;
 
 	//Add 3D noise partially
 	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
 	
 	//Add 2D noise
-	density += FractalBrownianMotion(FVector(noiseInput.X / 18, noiseInput.Y / 18, 0), Octaves, SurfaceFrequency);
+	density += FractalBrownianMotion(FVector(noiseInput.X / SurfaceNoiseScale, noiseInput.Y / SurfaceNoiseScale, 0), Octaves, SurfaceFrequency); //14
 
 
 	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
 
-	float density2 = FractalBrownianMotion(FVector(noiseInput / 5), Octaves, CaveFrequency);
+	float density2 = FractalBrownianMotion(FVector(noiseInput / CaveNoiseScale), Octaves, CaveFrequency);
 
 	if (perlinInput.Z < 1)//Cave floors
 	{
@@ -100,7 +106,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	}
 	else
 	{
-		return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
+		return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
 	}
 }
 
@@ -183,6 +189,7 @@ void ATerrainTile::CreateMesh()
 			ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 		}
 	}
+	CreateTrees();
 }
 
 void ATerrainTile::CalculateNormals()
@@ -234,6 +241,37 @@ void ATerrainTile::CalculateNormals()
 		normal.Normalize();
 	}
 	
+}
+
+void ATerrainTile::CreateTrees()
+{
+	for (int i = 0; i < GridSizeX; i++)
+	{
+		for (int j = 0; j < GridSizeY; j++)
+		{
+			float treeNoise = FMath::PerlinNoise2D(FVector2D{ float(i),float(j) }/5);
+			if (treeNoise > 0.6)
+			{
+				FHitResult Hit;
+				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
+				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(CaveLevel * Scale) };
+				ECollisionChannel Channel = ECC_Visibility;
+				FCollisionQueryParams Params;
+				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
+				FVector Location = Hit.Location;
+				if (Hit.Location != FVector{ 0, 0, 0 })
+				{
+					FRotator Rotation = { 0,float(FMath::Rand()),0 };
+					FActorSpawnParameters SpawnParams;
+					ATree* tree = GetWorld()->SpawnActor<ATree>(TreeClass, Location, Rotation, SpawnParams);
+					tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
+					TreeList.Push(tree);
+				}
+				
+			}
+		}
+	}
+
 }
 
 
