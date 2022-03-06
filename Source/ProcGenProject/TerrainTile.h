@@ -54,8 +54,7 @@ public:
 	static int SurfaceNoiseScale;
 	static int CaveNoiseScale;
 
-	UFUNCTION()
-		void CreateMesh();
+	void CreateMesh();
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
@@ -108,6 +107,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Trees")
 		TSubclassOf<class ATree> TreeClass;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+	TArray<UStaticMesh*> treeMeshList;
 
 	TArray<ATree*> TreeList;
 

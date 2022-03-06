@@ -258,14 +258,19 @@ void ATerrainTile::CreateTrees()
 				ECollisionChannel Channel = ECC_Visibility;
 				FCollisionQueryParams Params;
 				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
-				FVector Location = Hit.Location;
+				FVector Location = Hit.Location + FVector{0,0,float(Scale / 2)};
 				if (Hit.Location != FVector{ 0, 0, 0 })
 				{
 					FRotator Rotation = { 0,float(FMath::Rand()),0 };
 					FActorSpawnParameters SpawnParams;
+					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
 					ATree* tree = GetWorld()->SpawnActor<ATree>(TreeClass, Location, Rotation, SpawnParams);
-					tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
-					TreeList.Push(tree);
+					if (tree != nullptr)
+					{
+						tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
+						tree->TreeMesh->SetStaticMesh(treeMeshList[FMath::RandRange(0, treeMeshList.Num() - 1)]);
+						TreeList.Push(tree);
+					}
 				}
 				
 			}
@@ -273,8 +278,6 @@ void ATerrainTile::CreateTrees()
 	}
 
 }
-
-
 
 //void ATerrainTile::AssignTriangles()
 //{
