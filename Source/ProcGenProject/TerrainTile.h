@@ -37,12 +37,15 @@ public:
 
 	void CreateTrees();
 
+	void CreateWaterMesh();
+
 	//void AssignTriangles();
 	//void AssignColours();
 
 	void Init(bool useCustomMultithreading, float seed, int scale, int octaves, float surfaceFrequency,
 				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
-					int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit);
+					int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit,
+						int waterLevel);
 	
 	bool UseCustomMultithreading;
 	static float Seed;
@@ -61,11 +64,16 @@ public:
 	int TreeOctaves;
 	float TreeFrequency;
 	float TreeNoiseValueLimit;
+	
+	int WaterLevel;
 
 	void CreateMesh();
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
+
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+		UMaterialInterface* WaterMeshMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UProceduralMeshComponent* ProcMesh;
@@ -84,6 +92,24 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Water")
 		UStaticMeshComponent* WaterMesh;
+
+	UPROPERTY()
+		TArray< FVector > WaterVertices;
+
+	UPROPERTY()
+		TArray< int32 > WaterTriangles;
+
+	UPROPERTY()
+		TArray< FVector > WaterNormals;
+
+	UPROPERTY()
+		TArray< FVector2D > WaterUV0;
+
+	UPROPERTY()
+		TArray< FColor > WaterVertexColour;
+
+	UPROPERTY()
+		TArray <FProcMeshTangent> WaterTangents;
 
 	UPROPERTY()
 		int32 SectionIndex;
@@ -122,7 +148,5 @@ public:
 	TArray<ATree*> TreeList;
 
 	static bool WaterMeshAdded;
-
-
 
 };

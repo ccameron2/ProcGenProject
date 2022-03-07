@@ -16,12 +16,16 @@ class PROCGENPROJECT_API ATerrainManager : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ATerrainManager();
+
 	UPROPERTY(VisibleAnywhere, Category = "Chunks")
 	TArray<ATerrainTile*> TileArray;
+
 	UPROPERTY(EditAnywhere,Category = "Chunks")
 		int TileX = 10;
+
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int TileY = 10;
+
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int ChunkSize = 256;
 
@@ -32,7 +36,7 @@ public:
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		float Seed = 2496;
+		float Seed = 875694;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		int Octaves = 10;
@@ -70,6 +74,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Trees")
 		float TreeNoiseValueLimit = 0.25;
 
+	UPROPERTY(EditAnywhere, Category = "Water")
+		float WaterLevel = 800;
 
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);

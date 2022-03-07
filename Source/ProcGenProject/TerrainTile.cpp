@@ -3,6 +3,7 @@
 #include <functional>
 #include "KismetProceduralMeshLibrary.h"
 #include "Tree.h"
+#include "delaunator.hpp"
 
 FCustomWorker* mcWorker = nullptr;
 float ATerrainTile::Seed = 0;
@@ -37,6 +38,8 @@ ATerrainTile::ATerrainTile()
 	Material = TerrainMaterial.Object;
 	ProcMesh->SetMaterial(0, Material);
 
+	static ConstructorHelpers::FObjectFinder<UMaterial> WaterMaterial(TEXT("Material'/Game/M_Water_Mesh'"));
+	WaterMeshMaterial = WaterMaterial.Object;
 }
 
 // Called when the game starts or when spawned
@@ -68,7 +71,8 @@ void ATerrainTile::BeginPlay()
 
 void ATerrainTile::Init(bool useCustomMultithreading, float seed, int scale, int octaves, float surfaceFrequency,
 							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
-								int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit)
+								int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit,
+									int waterLevel)
 {
 	UseCustomMultithreading = useCustomMultithreading;
 	Seed = seed;
@@ -84,6 +88,7 @@ void ATerrainTile::Init(bool useCustomMultithreading, float seed, int scale, int
 	TreeNoiseScale = treeNoiseScale;
 	TreeOctaves = treeOctaves;
 	TreeFrequency = treeFrequency;
+	WaterLevel = waterLevel;
 
 	TreeNoiseValueLimit = treeNoiseValueLimit;
 }
@@ -111,28 +116,29 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 		return 1;
 	}
 
-	if (perlinInput.Z < SurfaceLevel)
+	if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.2) > 0.1)
 	{
-		if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.2) > 0.3)
+		if (!WaterMeshAdded)
 		{
-			if (!WaterMeshAdded)
-			{
-				WaterMeshAdded = true;
-			}
-
-			if (perlinInput.Z >= SurfaceLevel - 10 * Scale)
-			{
-				return density - 0.03;
-			}
-			if (perlinInput.Z < CaveLevel)
-			{
-				return density2;
-			}
-			else
-			{
-				return FMath::Lerp(density2, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
-			}
+			WaterMeshAdded = true;
 		}
+
+		if (perlinInput.Z >= SurfaceLevel * Scale)
+		{
+			return density - 0.05;
+		}
+		/*if (perlinInput.Z < CaveLevel)
+		{
+			return density2;
+		}
+		else
+		{
+			return FMath::Lerp(density2, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
+		}*/
+		//else
+		//{
+		//	return -1;
+		//}
 	}
 	
 
@@ -234,7 +240,7 @@ void ATerrainTile::CreateMesh()
 	CreateTrees();
 	if (WaterMeshAdded)
 	{
-		WaterMesh->SetVisibility(true);
+		CreateWaterMesh();
 	}
 }
 
@@ -307,22 +313,141 @@ void ATerrainTile::CreateTrees()
 				FVector Location = Hit.Location + FVector{0,0,float(Scale / 2)};
 				if (Hit.Location != FVector{ 0, 0, 0 })
 				{
-					FRotator Rotation = { 0,float(FMath::Rand()),0 };
-					FActorSpawnParameters SpawnParams;
-					//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
-					ATree* tree = GetWorld()->SpawnActor<ATree>(TreeClass, Location, Rotation, SpawnParams);
-					if (tree != nullptr)
+					if (Hit.Location.Z > (WaterLevel) * Scale)
 					{
-						tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
-						tree->TreeMesh->SetStaticMesh(treeMeshList[FMath::RandRange(0, treeMeshList.Num() - 1)]);
-						TreeList.Push(tree);
-					}
+						FRotator Rotation = { 0,float(FMath::Rand()),0 };
+						FActorSpawnParameters SpawnParams;
+						//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
+						ATree* tree = GetWorld()->SpawnActor<ATree>(TreeClass, Location, Rotation, SpawnParams);
+						if (tree != nullptr)
+						{
+							tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
+							tree->TreeMesh->SetStaticMesh(treeMeshList[FMath::RandRange(0, treeMeshList.Num() - 1)]);
+							TreeList.Push(tree);
+						}
+					}			
 				}
 				
 			}
 		}
 	}
 
+}
+
+void ATerrainTile::CreateWaterMesh()
+{
+
+	for (int i = 0; i < GridSizeX + Scale; i++)
+	{
+		for (int j = 0; j < GridSizeY + Scale; j++)
+		{
+			float treeNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / 5, 4, 0.4);
+			if (treeNoise > 0.25)
+			{
+				FHitResult Hit;
+				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float((SurfaceLevel) * Scale) };
+				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float((CaveLevel) * Scale) };
+				ECollisionChannel Channel = ECC_Visibility;
+				FCollisionQueryParams Params;
+				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
+				FVector Offset = FVector{ 0,0,float(Scale * 1) };
+				FVector Location = Hit.Location + Offset;
+				if (Hit.Location != FVector{ 0, 0, 0 })
+				{
+					if (Hit.Location != Offset)
+					{
+						if (Hit.Location.Z < (WaterLevel) * Scale)
+						{
+							if (Hit.Location.Z < (WaterLevel - 20) * Scale)
+							{
+								Location.Z = (WaterLevel - 20) * Scale;
+							}
+							WaterVertices.Push(Location);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	std::vector<double> coords;
+
+	for (auto& vertex : WaterVertices)
+	{
+		coords.push_back(vertex.X);
+		coords.push_back(vertex.Y);
+	}
+
+	if (coords.size() > 6)
+	{
+		//triangulation happens here
+		delaunator::Delaunator d(coords);
+
+		for (auto& triangle : d.triangles)
+		{
+			WaterTriangles.Push(triangle);
+		}
+	}
+
+	UKismetProceduralMeshLibrary* kismet;
+	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);
+
+	//WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
+
+	//// Map of vertex to triangles in Triangles array
+	//TArray<TArray<int32>> VertToTriMap;
+	//VertToTriMap.Init(TArray<int32>{ int32{ -1 }, int32{ -1 }, int32{ -1 },
+	//									int32{ -1 }, int32{ -1 }, int32{ -1 },
+	//										int32{ -1 }, int32{ -1 } }, WaterVertices.Num());
+
+	//// For each triangle for each vertex add triangle to vertex array entry
+	//for (int i = 0; i < WaterTriangles.Num(); i++)
+	//{
+	//	for (int j = 0; j < 8; j++)
+	//	{
+	//		if (VertToTriMap[WaterTriangles[i]][j] < 0)
+	//		{
+	//			VertToTriMap[WaterTriangles[i]][j] = i / 3;
+	//		}
+	//	}
+	//}
+
+	////For each vertex collect the triangles that share it and calculate the face normal
+	//for (int i = 0; i < WaterVertices.Num(); i=+3)
+	//{
+	//	for (auto& triangle : VertToTriMap[i])
+	//	{
+	//		//This shouldnt happen
+	//		if (triangle < 0)
+	//		{
+	//			continue;
+	//		}
+	//		auto A = WaterVertices[WaterTriangles[triangle]];
+	//		auto B = WaterVertices[WaterTriangles[triangle + 1]];
+	//		auto C = WaterVertices[WaterTriangles[triangle + 2]];
+	//		auto E1 = A - B;
+	//		auto E2 = C - B;
+	//		auto Normal = E1 ^ E2;
+	//		Normal.Normalize();
+	//		WaterNormals[i] += Normal;
+	//	}
+	//}
+
+	////Average the face normals
+	//for (auto& normal : WaterNormals)
+	//{
+	//	normal.Normalize();
+	//}
+
+	////for (int i = 0; i < WaterVertices.Num(); i++)
+	////{
+	////	WaterTriangles.Push(i);
+	////	WaterTriangles.Push(i + 1);
+	////	WaterTriangles.Push(i + GridSizeX);
+	////}
+
+	ProcMesh->CreateMeshSection(1, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
+	ProcMesh->SetMaterial(1, WaterMeshMaterial);
 }
 
 //void ATerrainTile::AssignTriangles()
