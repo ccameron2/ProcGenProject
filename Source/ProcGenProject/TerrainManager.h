@@ -25,15 +25,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int ChunkSize = 256;
 
-	//From TerrainTile
+	UPROPERTY(EditAnywhere, Category = "ProcGen")
+		bool UseCustomMultithreading = false;
+
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int Scale = 100;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		float Seed = 2496;
-
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		bool UseCustomMultithreading = false;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		int Octaves = 10;
@@ -58,6 +57,19 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		int CaveNoiseScale = 6;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		int TreeNoiseScale = 5;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		int TreeOctaves = 4;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		float TreeFrequency = 0.4;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		float TreeNoiseValueLimit = 0.25;
+
 
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);

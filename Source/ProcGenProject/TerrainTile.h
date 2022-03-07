@@ -40,11 +40,14 @@ public:
 	//void AssignTriangles();
 	//void AssignColours();
 
-	void Init(float seed, bool useCustomMultithreading, int octaves, float surfaceFrequency,
-				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale);
-
-	static float Seed;
+	void Init(bool useCustomMultithreading, float seed, int scale, int octaves, float surfaceFrequency,
+				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
+					int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit);
+	
 	bool UseCustomMultithreading;
+	static float Seed;
+
+	static int Scale;
 	static int Octaves;
 	static float SurfaceFrequency;
 	static float CaveFrequency;
@@ -53,6 +56,11 @@ public:
 	static int CaveLevel;
 	static int SurfaceNoiseScale;
 	static int CaveNoiseScale;
+
+	int TreeNoiseScale;
+	int TreeOctaves;
+	float TreeFrequency;
+	float TreeNoiseValueLimit;
 
 	void CreateMesh();
 
@@ -63,19 +71,19 @@ public:
 		UProceduralMeshComponent* ProcMesh;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int Scale = 100;
-
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int GridSizeX = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		int GridSizeY = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 1600;
+		int GridSizeZ = 1800;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		FVector2D ChunkPos = { 0,0 };
+
+	UPROPERTY(EditAnywhere, Category = "Water")
+		UStaticMeshComponent* WaterMesh;
 
 	UPROPERTY()
 		int32 SectionIndex;
@@ -112,5 +120,9 @@ public:
 	TArray<UStaticMesh*> treeMeshList;
 
 	TArray<ATree*> TreeList;
+
+	static bool WaterMeshAdded;
+
+
 
 };

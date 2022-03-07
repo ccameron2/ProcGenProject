@@ -6,6 +6,7 @@
 
 FCustomWorker* mcWorker = nullptr;
 float ATerrainTile::Seed = 0;
+int ATerrainTile::Scale = 0;
 int ATerrainTile::Octaves = 0;
 float ATerrainTile::SurfaceFrequency = 0;
 float ATerrainTile::CaveFrequency = 0;
@@ -14,7 +15,7 @@ int ATerrainTile::SurfaceLevel = 0;
 int ATerrainTile::CaveLevel = 0;
 int ATerrainTile::SurfaceNoiseScale = 0;
 int ATerrainTile::CaveNoiseScale = 0;
-
+bool ATerrainTile::WaterMeshAdded = false;
 
 // Sets default values
 ATerrainTile::ATerrainTile()
@@ -25,6 +26,13 @@ ATerrainTile::ATerrainTile()
 	//Create Procedural mesh and attach to root component
 	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
 	SetRootComponent(ProcMesh);
+
+	WaterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Water Mesh"));
+	WaterMesh->SetupAttachment(RootComponent);
+	WaterMesh->SetRelativeLocation(FVector{ 0,0,float((SurfaceLevel * Scale) - (10 * Scale)) });
+	//WaterMesh->SetVisibility(false);
+	WaterMeshAdded = false;
+
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
 	ProcMesh->SetMaterial(0, Material);
@@ -58,11 +66,13 @@ void ATerrainTile::BeginPlay()
 //	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 //}
 
-void ATerrainTile::Init(float seed, bool useCustomMultithreading, int octaves, float surfaceFrequency,
-							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale)
+void ATerrainTile::Init(bool useCustomMultithreading, float seed, int scale, int octaves, float surfaceFrequency,
+							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
+								int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit)
 {
-	Seed = seed;
 	UseCustomMultithreading = useCustomMultithreading;
+	Seed = seed;
+	Scale = scale;
 	Octaves = octaves;
 	SurfaceFrequency = surfaceFrequency;
 	CaveFrequency = caveFrequency;
@@ -71,6 +81,11 @@ void ATerrainTile::Init(float seed, bool useCustomMultithreading, int octaves, f
 	CaveLevel = caveLevel;
 	SurfaceNoiseScale = surfaceNoiseScale;
 	CaveNoiseScale = caveNoiseScale;
+	TreeNoiseScale = treeNoiseScale;
+	TreeOctaves = treeOctaves;
+	TreeFrequency = treeFrequency;
+
+	TreeNoiseValueLimit = treeNoiseValueLimit;
 }
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
@@ -95,6 +110,33 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	{
 		return 1;
 	}
+
+	if (perlinInput.Z < SurfaceLevel)
+	{
+		if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.2) > 0.3)
+		{
+			if (!WaterMeshAdded)
+			{
+				WaterMeshAdded = true;
+			}
+
+			if (perlinInput.Z >= SurfaceLevel - 10 * Scale)
+			{
+				return density - 0.03;
+			}
+			if (perlinInput.Z < CaveLevel)
+			{
+				return density2;
+			}
+			else
+			{
+				return FMath::Lerp(density2, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
+			}
+		}
+	}
+	
+
+	
 
 	if (perlinInput.Z >= SurfaceLevel)//640
 	{
@@ -190,6 +232,10 @@ void ATerrainTile::CreateMesh()
 		}
 	}
 	CreateTrees();
+	if (WaterMeshAdded)
+	{
+		WaterMesh->SetVisibility(true);
+	}
 }
 
 void ATerrainTile::CalculateNormals()
@@ -245,12 +291,12 @@ void ATerrainTile::CalculateNormals()
 
 void ATerrainTile::CreateTrees()
 {
-	for (int i = 0; i < GridSizeX; i++)
+	for (int i = 0; i < GridSizeX; i+=8)
 	{
-		for (int j = 0; j < GridSizeY; j++)
+		for (int j = 0; j < GridSizeY; j+=8)
 		{
-			float treeNoise = FMath::PerlinNoise2D(FVector2D{ float(i),float(j) }/5);
-			if (treeNoise > 0.6)
+			float treeNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / TreeNoiseScale,TreeOctaves,TreeFrequency);
+			if (treeNoise > TreeNoiseValueLimit	)
 			{
 				FHitResult Hit;
 				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
@@ -263,7 +309,7 @@ void ATerrainTile::CreateTrees()
 				{
 					FRotator Rotation = { 0,float(FMath::Rand()),0 };
 					FActorSpawnParameters SpawnParams;
-					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
+					//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
 					ATree* tree = GetWorld()->SpawnActor<ATree>(TreeClass, Location, Rotation, SpawnParams);
 					if (tree != nullptr)
 					{
