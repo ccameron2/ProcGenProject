@@ -1,4 +1,5 @@
 #include "CustomWorker.h"
+#include "TerrainManager.h"
 
 #pragma region Main Thread
 
@@ -34,7 +35,7 @@ uint32 FCustomWorker::Run()
 			//Marching Cubes
 			MarchingCubes.Bounds = BoundingBox;
 			MarchingCubes.bParallelCompute = true;
-			MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
+			MarchingCubes.Implicit = ATerrainManager::PerlinWrapper;
 			MarchingCubes.CubeSize = 8;
 			MarchingCubes.IsoValue = 0;
 			MarchingCubes.Generate();
@@ -58,7 +59,7 @@ uint32 FCustomWorker::Run()
 			UE_LOG(LogTemp, Warning, TEXT("Thread Finished"));
 			InputReady = false;
 			FPlatformProcess::Sleep(0.01f);
-
+			RunThread = false;
 		}
 	}
 	return 0;

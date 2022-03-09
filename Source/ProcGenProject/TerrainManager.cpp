@@ -5,6 +5,16 @@
 #include "Kismet\GameplayStatics.h"
 #include <math.h>
 
+float ATerrainManager::seed = 0;
+int	  ATerrainManager::scale = 0;
+int   ATerrainManager::octaves = 0;
+float ATerrainManager::surfaceFrequency = 0;
+float ATerrainManager::caveFrequency = 0;
+int   ATerrainManager::noiseScale = 0;
+int   ATerrainManager::surfaceLevel = 0;
+int   ATerrainManager::caveLevel = 0;
+int   ATerrainManager::surfaceNoiseScale = 0;
+int   ATerrainManager::caveNoiseScale = 0;
 
 // Sets default values
 ATerrainManager::ATerrainManager()
@@ -19,17 +29,16 @@ void ATerrainManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	/*for (float i = 0; i < TileX; i++)
-	{
-		for (float j = 0; j < TileY; j++)
-		{
-			FVector Location(i * ChunkSize, j * ChunkSize, 0.0f);
-			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			FActorSpawnParameters SpawnParams;
-			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-			TileArray.Push(tile);
-		}
-	}*/
+	seed = Seed;
+	scale = Scale;
+	octaves = Octaves;
+	surfaceFrequency = SurfaceFrequency;
+	caveFrequency = CaveFrequency;
+	noiseScale = NoiseScale;
+	surfaceLevel = SurfaceLevel;
+	caveLevel = CaveLevel;
+	surfaceNoiseScale = SurfaceNoiseScale;
+	caveNoiseScale = CaveNoiseScale;
 
 	auto PlayerGridPosition = GetPlayerGridPosition();
 	PlayerGridPosition.X = round(PlayerGridPosition.X);
@@ -136,4 +145,79 @@ void ATerrainManager::Tick(float DeltaTime)
 		}
 		return;
 	}*/
+}
+
+double ATerrainManager::PerlinWrapper(FVector3<double> perlinInput)
+{
+	//Scale noise input
+	FVector3d noiseInput = (perlinInput + FVector{ seed,seed,0 }) / noiseScale;
+
+	float density = (-noiseInput.Z / 23) + 1;
+
+	//Add 3D noise partially
+	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
+
+	//Add 2D noise
+	density += FractalBrownianMotion(FVector(noiseInput.X / surfaceNoiseScale, noiseInput.Y / surfaceNoiseScale, 0), octaves, surfaceFrequency); //14
+
+
+	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
+
+	float density2 = FractalBrownianMotion(FVector(noiseInput / caveNoiseScale), octaves, caveFrequency);
+
+	if (perlinInput.Z < 1)//Cave floors
+	{
+		return 1;
+	}
+
+	if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.8) > 0.4)
+	{
+		if (perlinInput.Z >= surfaceLevel * scale)
+		{
+			return density - 0.2;
+		}
+		/*if (perlinInput.Z < CaveLevel)
+		{
+			return density2;
+		}
+		else
+		{
+			return FMath::Lerp(density2, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
+		}*/
+		//else
+		//{
+		//	return -1;
+		//}
+	}
+
+	if (perlinInput.Z >= surfaceLevel)//640
+	{
+		return density;
+	}
+	else if (perlinInput.Z < caveLevel)//384
+	{
+		return density2;
+	}
+	else
+	{
+		return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - caveLevel) / (surfaceLevel - caveLevel)); //0.1
+	}
+}
+
+float ATerrainManager::FractalBrownianMotion(FVector fractalInput, float fractalOctaves, float frequency)
+{
+	//The book of shaders
+	float result = 0;
+	float amplitude = 0.5;
+	float lacunarity = 2.0;
+	float gain = 0.5;
+
+	for (int i = 0; i < fractalOctaves; i++)
+	{
+		result += amplitude * FMath::PerlinNoise3D(frequency * fractalInput);
+		frequency *= lacunarity;
+		amplitude *= gain;
+	}
+
+	return result;
 }

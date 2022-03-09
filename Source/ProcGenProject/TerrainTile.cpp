@@ -5,7 +5,7 @@
 #include "Tree.h"
 #include "delaunator.hpp"
 
-FCustomWorker* mcWorker = nullptr;
+
 
 float ATerrainTile::Seed = 0;
 int ATerrainTile::Scale = 0;
@@ -447,8 +447,8 @@ void ATerrainTile::Tick(float DeltaTime)
 					MCTriangles[i] = mcWorker->mcTriangles[i];
 				}
 
-				delete[] mcWorker->mcVertices;
-				delete[] mcWorker->mcTriangles;
+				//delete[] mcWorker->mcVertices;
+				//delete[] mcWorker->mcTriangles;
 
 				if (MCVertices.Num() > 0)
 				{
@@ -476,10 +476,7 @@ void ATerrainTile::Tick(float DeltaTime)
 					ProcMesh->ClearAllMeshSections();
 					ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 
-					//if (mcWorker)
-					//{
-					//	delete mcWorker;
-					//}
+					//delete mcWorker;
 				}
 			}
 		}
@@ -487,12 +484,15 @@ void ATerrainTile::Tick(float DeltaTime)
 	
 	if(UseCustomNormalsMultithreading)
 	{
-		if (normalsWorker->InputReady == false)
+		if (normalsWorker)
 		{
-			Normals = normalsWorker->Normals;
-			ProcMesh->UpdateMeshSection(0, Vertices, Normals, UV0, VertexColour, Tangents);
-			//delete normalsWorker;
-		}
+			if (normalsWorker->InputReady == false)
+			{
+				Normals = normalsWorker->Normals;
+				ProcMesh->UpdateMeshSection(0, Vertices, Normals, UV0, VertexColour, Tangents);
+				//delete normalsWorker;
+			}
+		}		
 	}
 
 }

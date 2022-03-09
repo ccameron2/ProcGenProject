@@ -3,7 +3,6 @@
 #include "HAL/Runnable.h"
 #include "VectorTypes.h"
 #include "Generators/MarchingCubes.h"
-#include "TerrainTile.h"
 
 class PROCGENPROJECT_API FCustomWorker : public FRunnable
 {

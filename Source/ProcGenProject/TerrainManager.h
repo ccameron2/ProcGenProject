@@ -94,4 +94,20 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	static double PerlinWrapper(FVector3<double> perlinInput);
+
+	static float FractalBrownianMotion(FVector fractalInput, float fractalOctaves, float frequency);
+
+	static float seed;
+	
+	static int scale;
+	static int octaves;
+	static float surfaceFrequency;
+	static float caveFrequency;
+	static int noiseScale;
+	static int surfaceLevel;
+	static int caveLevel;
+	static int surfaceNoiseScale;
+	static int caveNoiseScale;
+
 };

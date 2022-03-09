@@ -155,4 +155,6 @@ public:
 
 	FNormalsWorker* normalsWorker = nullptr;
 
+	FCustomWorker* mcWorker = nullptr;
+
 };
