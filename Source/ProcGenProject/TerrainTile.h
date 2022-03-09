@@ -67,7 +67,8 @@ public:
 	
 	int WaterLevel;
 
-	void CreateMesh();
+	UFUNCTION(CallInEditor)
+		void CreateMesh();
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;

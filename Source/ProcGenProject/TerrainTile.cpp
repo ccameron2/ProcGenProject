@@ -116,16 +116,11 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 		return 1;
 	}
 
-	if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.2) > 0.1)
+	if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.8) > 0.4)
 	{
-		if (!WaterMeshAdded)
-		{
-			WaterMeshAdded = true;
-		}
-
 		if (perlinInput.Z >= SurfaceLevel * Scale)
 		{
-			return density - 0.05;
+			return density - 0.2;
 		}
 		/*if (perlinInput.Z < CaveLevel)
 		{
@@ -238,10 +233,10 @@ void ATerrainTile::CreateMesh()
 		}
 	}
 	CreateTrees();
-	if (WaterMeshAdded)
-	{
+	//if (WaterMeshAdded)
+	//{
 		CreateWaterMesh();
-	}
+	//}
 }
 
 void ATerrainTile::CalculateNormals()
@@ -341,12 +336,12 @@ void ATerrainTile::CreateWaterMesh()
 	{
 		for (int j = 0; j < GridSizeY + Scale; j++)
 		{
-			float treeNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / 5, 4, 0.4);
-			if (treeNoise > 0.25)
+			float waterNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / 5, 4, 0.4);
+			if (waterNoise > 0.25)
 			{
 				FHitResult Hit;
-				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float((SurfaceLevel) * Scale) };
-				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float((CaveLevel) * Scale) };
+				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
+				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(CaveLevel * Scale) };
 				ECollisionChannel Channel = ECC_Visibility;
 				FCollisionQueryParams Params;
 				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
@@ -372,21 +367,39 @@ void ATerrainTile::CreateWaterMesh()
 
 	std::vector<double> coords;
 
+	bool inARowX = true;
+	bool inARowY = true;
+	float lastXVertex = 0;
+	float lastYVertex = 0;
+
 	for (auto& vertex : WaterVertices)
 	{
+		if (vertex.X != lastXVertex)
+		{
+			inARowX = false;
+		}
+		if (vertex.Y != lastYVertex)
+		{
+			inARowY = false;
+		}
 		coords.push_back(vertex.X);
 		coords.push_back(vertex.Y);
+		lastXVertex = vertex.X;
+		lastYVertex = vertex.Y;
 	}
 
 	if (coords.size() > 6)
 	{
-		//triangulation happens here
-		delaunator::Delaunator d(coords);
-
-		for (auto& triangle : d.triangles)
+		if (!inARowX && !inARowY)
 		{
-			WaterTriangles.Push(triangle);
-		}
+			//triangulation happens here
+			delaunator::Delaunator d(coords);
+
+			for (auto& triangle : d.triangles)
+			{
+				WaterTriangles.Push(triangle);
+			}
+		}	
 	}
 
 	UKismetProceduralMeshLibrary* kismet;
