@@ -2,13 +2,14 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "ProceduralMeshComponent.h"
 #include "Generators/MarchingCubes.h"
 #include "VectorTypes.h"
-#include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "HAL/Runnable.h"
 #include "CustomWorker.h"
+#include "NormalsWorker.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -149,5 +150,9 @@ public:
 	TArray<ATree*> TreeList;
 
 	static bool WaterMeshAdded;
+
+	bool UseCustomNormalsMultithreading = true;
+
+	FNormalsWorker* normalsWorker = nullptr;
 
 };

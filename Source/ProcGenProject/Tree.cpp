@@ -10,6 +10,7 @@ ATree::ATree()
 	PrimaryActorTick.bCanEverTick = true;
 	TreeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tree Mesh"));
 	SetRootComponent(TreeMesh);
+
 }
 
 // Called when the game starts or when spawned

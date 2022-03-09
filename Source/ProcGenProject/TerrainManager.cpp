@@ -50,7 +50,9 @@ void ATerrainManager::BeginPlay()
 			tile->Init(UseCustomMultithreading, Seed, Scale, Octaves,SurfaceFrequency,CaveFrequency,
 						NoiseScale, SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale,
 							TreeNoiseScale, TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel);
-			tile->FinishSpawning(SpawnParams);
+			UGameplayStatics::FinishSpawningActor(tile, SpawnParams);
+
+			//tile->FinishSpawning(SpawnParams);
 			tile->CreateMesh();
 			TileArray.Push(tile);
 		}
@@ -108,7 +110,9 @@ void ATerrainManager::Tick(float DeltaTime)
 					tile->Init(UseCustomMultithreading, Seed, Scale, Octaves, SurfaceFrequency, CaveFrequency,
 								NoiseScale, SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale,
 									TreeNoiseScale, TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel);
-					tile->FinishSpawning(SpawnParams);
+
+					UGameplayStatics::FinishSpawningActor(tile, SpawnParams);
+					//tile->FinishSpawning(SpawnParams);
 					tile->CreateMesh();
 					TileArray.Push(tile);
 				}
@@ -133,4 +137,3 @@ void ATerrainManager::Tick(float DeltaTime)
 		return;
 	}*/
 }
-

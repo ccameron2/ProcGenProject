@@ -6,6 +6,7 @@
 #include "delaunator.hpp"
 
 FCustomWorker* mcWorker = nullptr;
+
 float ATerrainTile::Seed = 0;
 int ATerrainTile::Scale = 0;
 int ATerrainTile::Octaves = 0;
@@ -40,6 +41,7 @@ ATerrainTile::ATerrainTile()
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> WaterMaterial(TEXT("Material'/Game/M_Water_Mesh'"));
 	WaterMeshMaterial = WaterMaterial.Object;
+
 }
 
 // Called when the game starts or when spawned
@@ -185,10 +187,6 @@ void ATerrainTile::CreateMesh()
 		if (mcWorker)
 		{
 			mcWorker->InputReady = true;
-			if (mcWorker->Init())
-			{
-				mcWorker->Run();
-			}
 		}
 	}
 	else
@@ -224,9 +222,20 @@ void ATerrainTile::CreateMesh()
 
 			//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
-			//Calculate normals
-			CalculateNormals();
-
+			if (UseCustomNormalsMultithreading)
+			{
+				
+				normalsWorker = new FNormalsWorker(Vertices,Triangles, MCTriangles);
+				if (normalsWorker)
+				{
+					normalsWorker->InputReady = true;
+				}
+			}
+			else
+			{
+				//Calculate normals
+				CalculateNormals();
+			}
 			//Create Procedural Mesh Section with Marching Cubes data
 			ProcMesh->ClearAllMeshSections();
 			ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
@@ -257,6 +266,7 @@ void ATerrainTile::CalculateNormals()
 			if (VertToTriMap[Triangles[i]][j] < 0)
 			{
 				VertToTriMap[Triangles[i]][j] = i / 3;
+				break;
 			}
 		}		
 	}
@@ -405,70 +415,9 @@ void ATerrainTile::CreateWaterMesh()
 	UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);
 
-	//WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
-
-	//// Map of vertex to triangles in Triangles array
-	//TArray<TArray<int32>> VertToTriMap;
-	//VertToTriMap.Init(TArray<int32>{ int32{ -1 }, int32{ -1 }, int32{ -1 },
-	//									int32{ -1 }, int32{ -1 }, int32{ -1 },
-	//										int32{ -1 }, int32{ -1 } }, WaterVertices.Num());
-
-	//// For each triangle for each vertex add triangle to vertex array entry
-	//for (int i = 0; i < WaterTriangles.Num(); i++)
-	//{
-	//	for (int j = 0; j < 8; j++)
-	//	{
-	//		if (VertToTriMap[WaterTriangles[i]][j] < 0)
-	//		{
-	//			VertToTriMap[WaterTriangles[i]][j] = i / 3;
-	//		}
-	//	}
-	//}
-
-	////For each vertex collect the triangles that share it and calculate the face normal
-	//for (int i = 0; i < WaterVertices.Num(); i=+3)
-	//{
-	//	for (auto& triangle : VertToTriMap[i])
-	//	{
-	//		//This shouldnt happen
-	//		if (triangle < 0)
-	//		{
-	//			continue;
-	//		}
-	//		auto A = WaterVertices[WaterTriangles[triangle]];
-	//		auto B = WaterVertices[WaterTriangles[triangle + 1]];
-	//		auto C = WaterVertices[WaterTriangles[triangle + 2]];
-	//		auto E1 = A - B;
-	//		auto E2 = C - B;
-	//		auto Normal = E1 ^ E2;
-	//		Normal.Normalize();
-	//		WaterNormals[i] += Normal;
-	//	}
-	//}
-
-	////Average the face normals
-	//for (auto& normal : WaterNormals)
-	//{
-	//	normal.Normalize();
-	//}
-
-	////for (int i = 0; i < WaterVertices.Num(); i++)
-	////{
-	////	WaterTriangles.Push(i);
-	////	WaterTriangles.Push(i + 1);
-	////	WaterTriangles.Push(i + GridSizeX);
-	////}
-
 	ProcMesh->CreateMeshSection(1, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
 	ProcMesh->SetMaterial(1, WaterMeshMaterial);
 }
-
-//void ATerrainTile::AssignTriangles()
-//{
-//	Triangles.Init(0, GridSizeX * GridSizeY * 6);
-//	UKismetProceduralMeshLibrary* procLib;
-//	procLib->CreateGridMeshTriangles(GridSizeX,GridSizeY, false, Triangles);
-//}
 
 // Called every frame
 void ATerrainTile::Tick(float DeltaTime)
@@ -479,11 +428,27 @@ void ATerrainTile::Tick(float DeltaTime)
 	{
 		if (mcWorker)
 		{
+			
 			if (mcWorker->InputReady == false)
 			{
 				//Get data from multithreading worker
-				MCVertices = mcWorker->mcVertices;
-				MCTriangles = mcWorker->mcTriangles;
+
+				MCVertices.Init(FVector3d{ 0,0,0 }, mcWorker->numVert);
+				MCTriangles.Init(FIndex3i{ 0,0,0 }, mcWorker->numTri);
+
+
+				for (int i = 0; i < mcWorker->numVert; i++)
+				{
+					MCVertices[i] = mcWorker->mcVertices[i];
+				}
+
+				for (int i = 0; i < mcWorker->numTri; i++)
+				{
+					MCTriangles[i] = mcWorker->mcTriangles[i];
+				}
+
+				delete[] mcWorker->mcVertices;
+				delete[] mcWorker->mcTriangles;
 
 				if (MCVertices.Num() > 0)
 				{
@@ -505,20 +470,31 @@ void ATerrainTile::Tick(float DeltaTime)
 					//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
 					//Calculate normals
-					CalculateNormals();
+					//CalculateNormals();
 
 					//Create Procedural Mesh Section with Marching Cubes data
 					ProcMesh->ClearAllMeshSections();
 					ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
-					if (mcWorker)
-					{
-						delete mcWorker;
-					}
+
+					//if (mcWorker)
+					//{
+					//	delete mcWorker;
+					//}
 				}
 			}
 		}
 	}
 	
+	if(UseCustomNormalsMultithreading)
+	{
+		if (normalsWorker->InputReady == false)
+		{
+			Normals = normalsWorker->Normals;
+			ProcMesh->UpdateMeshSection(0, Vertices, Normals, UV0, VertexColour, Tangents);
+			//delete normalsWorker;
+		}
+	}
+
 }
 
 void ATerrainTile::OnConstruction(const FTransform& Transform)

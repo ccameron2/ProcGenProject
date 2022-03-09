@@ -1,14 +1,11 @@
 #include "CustomWorker.h"
-#include "TerrainTile.h"
-#include "Generators/MarchingCubes.h"
-#include "Misc/ScopeLock.h"
 
 #pragma region Main Thread
 
 FCustomWorker::FCustomWorker(FAxisAlignedBox3d boundingBox)
 {
-	Thread = FRunnableThread::Create(this, TEXT("Thread"));
 	BoundingBox = boundingBox;
+	Thread = FRunnableThread::Create(this, TEXT("Thread"));
 }
 
 FCustomWorker::~FCustomWorker()
@@ -35,20 +32,33 @@ uint32 FCustomWorker::Run()
 		if (InputReady)
 		{
 			//Marching Cubes
-			FMarchingCubes MarchingCubes;
 			MarchingCubes.Bounds = BoundingBox;
 			MarchingCubes.bParallelCompute = true;
 			MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
 			MarchingCubes.CubeSize = 8;
 			MarchingCubes.IsoValue = 0;
 			MarchingCubes.Generate();
-			mcTriangles = MarchingCubes.Triangles;
-			mcVertices = MarchingCubes.Vertices;
+
+			numVert = MarchingCubes.Vertices.Num();
+			numTri = MarchingCubes.Triangles.Num();
+
+			mcVertices = new FVector3d[numVert];
+			mcTriangles = new FIndex3i[numTri];
+
+			for (int i= 0; i < numVert; i++)
+			{
+				mcVertices[i] = MarchingCubes.Vertices[i];
+			}
+
+			for (int i = 0; i < numTri; i++)
+			{
+				mcTriangles[i] = MarchingCubes.Triangles[i];
+			}
+
 			UE_LOG(LogTemp, Warning, TEXT("Thread Finished"));
 			InputReady = false;
 			FPlatformProcess::Sleep(0.01f);
-			
-			RunThread = false;
+
 		}
 	}
 	return 0;
