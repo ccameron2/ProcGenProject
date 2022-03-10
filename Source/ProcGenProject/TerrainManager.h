@@ -29,8 +29,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int ChunkSize = 256;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		bool UseCustomMultithreading = true;
+	UPROPERTY(EditAnywhere, Category = "Chunks")
+		int ChunkHeight = 1800;
 
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int Scale = 100;
@@ -51,10 +51,10 @@ public:
 		int NoiseScale = 50;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int SurfaceLevel = 1000;
+		int SurfaceLevel = 900;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int CaveLevel = 600;
+		int CaveLevel = 700;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
 		int SurfaceNoiseScale = 18;
@@ -86,7 +86,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Procgen")
 		TSubclassOf<ATerrainTile> TerrainClass;
 
-	FTerrainWorker* terrainWorker;
+	std::unique_ptr<FTerrainWorker> terrainWorker;
 
 protected:
 	// Called when the game starts or when spawned
@@ -95,21 +95,5 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	static double PerlinWrapper(FVector3<double> perlinInput);
-
-	static float FractalBrownianMotion(FVector fractalInput, float fractalOctaves, float frequency);
-
-	static float seed;
-	
-	static int scale;
-	static int octaves;
-	static float surfaceFrequency;
-	static float caveFrequency;
-	static int noiseScale;
-	static int surfaceLevel;
-	static int caveLevel;
-	static int surfaceNoiseScale;
-	static int caveNoiseScale;
 
 };

@@ -7,9 +7,6 @@
 #include "Generators/MarchingCubes.h"
 #include "VectorTypes.h"
 #include "GameFramework/Actor.h"
-#include "HAL/Runnable.h"
-#include "CustomWorker.h"
-#include "NormalsWorker.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -43,10 +40,9 @@ public:
 	//void AssignTriangles();
 	//void AssignColours();
 
-	void Init(bool useCustomMultithreading, float seed, int scale, int octaves, float surfaceFrequency,
-				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
-					int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit,
-						int waterLevel);
+	void Init(float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+				int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale,
+					int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel);
 
 	void GenerateTerrain();
 
@@ -54,9 +50,7 @@ public:
 
 	bool MeshCreated = false;
 	
-	bool UseCustomMultithreading;
 	static float Seed;
-
 	static int Scale;
 	static int Octaves;
 	static float SurfaceFrequency;
@@ -74,50 +68,23 @@ public:
 	
 	int WaterLevel;
 
-	UFUNCTION(CallInEditor)
-		void CreateMesh();
-
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* WaterMeshMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		UProceduralMeshComponent* ProcMesh;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		int GridSizeX = 256;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		int GridSizeY = 256;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
-		int GridSizeZ = 1800;
-
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
-		FVector2D ChunkPos = { 0,0 };
-
-	UPROPERTY(EditAnywhere, Category = "Water")
-		UStaticMeshComponent* WaterMesh;
-
-	UPROPERTY()
-		TArray< FVector > WaterVertices;
-
-	UPROPERTY()
-		TArray< int32 > WaterTriangles;
-
-	UPROPERTY()
-		TArray< FVector > WaterNormals;
-
-	UPROPERTY()
-		TArray< FVector2D > WaterUV0;
-
-	UPROPERTY()
-		TArray< FColor > WaterVertexColour;
-
-	UPROPERTY()
-		TArray <FProcMeshTangent> WaterTangents;
+		int GridSizeZ = 1800;
 
 	UPROPERTY()
 		int32 SectionIndex;
@@ -147,6 +114,27 @@ public:
 
 	TArray<FVector3d> MCVertices;
 
+	UPROPERTY(EditAnywhere, Category = "Water")
+		UStaticMeshComponent* WaterMesh;
+
+	UPROPERTY()
+		TArray< FVector > WaterVertices;
+
+	UPROPERTY()
+		TArray< int32 > WaterTriangles;
+
+	UPROPERTY()
+		TArray< FVector > WaterNormals;
+
+	UPROPERTY()
+		TArray< FVector2D > WaterUV0;
+
+	UPROPERTY()
+		TArray< FColor > WaterVertexColour;
+
+	UPROPERTY()
+		TArray <FProcMeshTangent> WaterTangents;
+
 	UPROPERTY(EditAnywhere, Category = "Trees")
 		TSubclassOf<class ATree> TreeClass;
 
@@ -154,13 +142,5 @@ public:
 	TArray<UStaticMesh*> treeMeshList;
 
 	TArray<ATree*> TreeList;
-
-	static bool WaterMeshAdded;
-
-	bool UseCustomNormalsMultithreading = false;
-
-	FNormalsWorker* normalsWorker = nullptr;
-
-	FCustomWorker* mcWorker = nullptr;
 
 };

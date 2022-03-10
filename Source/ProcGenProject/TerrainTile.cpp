@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the DescrSiption page of Project Settings.
 #include "TerrainTile.h"
-#include <functional>
 #include "KismetProceduralMeshLibrary.h"
 #include "Tree.h"
 #include "delaunator.hpp"
@@ -15,7 +14,6 @@ int ATerrainTile::SurfaceLevel = 0;
 int ATerrainTile::CaveLevel = 0;
 int ATerrainTile::SurfaceNoiseScale = 0;
 int ATerrainTile::CaveNoiseScale = 0;
-bool ATerrainTile::WaterMeshAdded = false;
 
 // Sets default values
 ATerrainTile::ATerrainTile()
@@ -30,8 +28,6 @@ ATerrainTile::ATerrainTile()
 	WaterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Water Mesh"));
 	WaterMesh->SetupAttachment(RootComponent);
 	WaterMesh->SetRelativeLocation(FVector{ 0,0,float((SurfaceLevel * Scale) - (10 * Scale)) });
-	//WaterMesh->SetVisibility(false);
-	WaterMeshAdded = false;
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
@@ -48,35 +44,15 @@ void ATerrainTile::BeginPlay()
 	Super::BeginPlay();
 }
 
-//void ATerrainTile::CreateMesh()
-//{
-//	ProcMesh->ClearAllMeshSections();
-//	Vertices.Empty();
-//	for (int i = 0; i < GridSizeX; i++)
-//	{
-//		for (int j = 0; j < GridSizeY; j++)
-//		{
-//			Vertices.Push(FVector{float(i) * Scale,float(j) * Scale,0});
-//		}
-//	}
-//	float counter = 0;
-//	for (int i = 0; i < Vertices.Num(); i++)
-//	{
-//		counter += FMath::FRand();
-//		Vertices[i].Z = Scale * FMath::PerlinNoise2D(FVector2D{ Vertices[i].X, Vertices[i].Y });/* FractalBrownianMotion(Vertices[i].X, Vertices[i].Y, Vertices[i].Z, NumOctaves, Lacunarity, Gain); */
-//	}
-//	AssignTriangles();
-//	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
-//}
-
-void ATerrainTile::Init(bool useCustomMultithreading, float seed, int scale, int octaves, float surfaceFrequency,
-							float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
-								int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit,
-									int waterLevel)
+void ATerrainTile::Init(float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency, 
+							int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale,
+								int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel)
 {
-	UseCustomMultithreading = useCustomMultithreading;
 	Seed = seed;
 	Scale = scale;
+	GridSizeX = chunkSize;
+	GridSizeY = chunkSize;
+	GridSizeZ = chunkHeight;
 	Octaves = octaves;
 	SurfaceFrequency = surfaceFrequency;
 	CaveFrequency = caveFrequency;
@@ -89,12 +65,17 @@ void ATerrainTile::Init(bool useCustomMultithreading, float seed, int scale, int
 	TreeOctaves = treeOctaves;
 	TreeFrequency = treeFrequency;
 	WaterLevel = waterLevel;
-
 	TreeNoiseValueLimit = treeNoiseValueLimit;
 }
 
 void ATerrainTile::GenerateTerrain()
 {
+	Triangles.Empty();
+	Vertices.Empty();
+	Normals.Empty();
+	Tangents.Empty();
+	UV0.Empty();
+
 	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + 
 									FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
 	FMarchingCubes MarchingCubes;
@@ -134,7 +115,6 @@ void ATerrainTile::CreateProcMesh()
 {
 	ProcMesh->ClearAllMeshSections();
 	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
-
 	CreateTrees();
 	CreateWaterMesh();
 }
@@ -152,9 +132,6 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//Add 2D noise
 	density += FractalBrownianMotion(FVector(noiseInput.X / SurfaceNoiseScale, noiseInput.Y / SurfaceNoiseScale, 0), Octaves, SurfaceFrequency); //14
 
-
-	//density = FMath::PerlinNoise2D(FVector2D(noiseInput.X, noiseInput.Y));
-
 	float density2 = FractalBrownianMotion(FVector(noiseInput / CaveNoiseScale), Octaves, CaveFrequency);
 
 	if (perlinInput.Z < 1)//Cave floors
@@ -168,23 +145,8 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 		{
 			return density - 0.2;
 		}
-		/*if (perlinInput.Z < CaveLevel)
-		{
-			return density2;
-		}
-		else
-		{
-			return FMath::Lerp(density2, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
-		}*/
-		//else
-		//{
-		//	return -1;
-		//}
 	}
 	
-
-	
-
 	if (perlinInput.Z >= SurfaceLevel)//640
 	{
 		return density;
@@ -215,83 +177,6 @@ float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, f
 	}
 
 	return result;
-}
-
-void ATerrainTile::CreateMesh()
-{
-	Triangles.Empty();
-	Vertices.Empty();
-	Normals.Empty();
-	Tangents.Empty();
-	UV0.Empty();
-	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
-	if (UseCustomMultithreading)
-	{
-		mcWorker = new FCustomWorker(BoundingBox);
-		if (mcWorker)
-		{
-			mcWorker->InputReady = true;
-		}
-	}
-	else
-	{
-		//Marching Cubes
-		FMarchingCubes MarchingCubes;
-		MarchingCubes.Bounds = BoundingBox;
-		MarchingCubes.bParallelCompute = true;
-		MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-		MarchingCubes.CubeSize = 8;
-		MarchingCubes.IsoValue = 0;
-		MarchingCubes.Generate();
-
-		MCTriangles = MarchingCubes.Triangles;
-		MCVertices = MarchingCubes.Vertices;
-
-		if (MCVertices.Num() > 0)
-		{
-			//Convert FIndex3i to Int32
-			for (int i = 0; i < MCTriangles.Num(); i++)
-			{
-				Triangles.Push(int32(MCTriangles[i].A));
-				Triangles.Push(int32(MCTriangles[i].B));
-				Triangles.Push(int32(MCTriangles[i].C));
-			}
-
-			//Scale the vertices
-			for (int i = 0; i < MCVertices.Num(); i++)
-			{
-				MCVertices[i] *= Scale;
-			}
-			Vertices = TArray<FVector>(MCVertices);
-
-			//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
-
-			if (UseCustomNormalsMultithreading)
-			{
-				
-				normalsWorker = new FNormalsWorker(Vertices,Triangles, MCTriangles);
-				if (normalsWorker)
-				{
-					normalsWorker->InputReady = true;
-				}
-			}
-			else
-			{
-				//Calculate normals
-				CalculateNormals();
-			}
-			//Create Procedural Mesh Section with Marching Cubes data
-			ProcMesh->ClearAllMeshSections();
-			ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
-			CreateTrees();
-			CreateWaterMesh();
-		}
-	}
-	
-	//if (WaterMeshAdded)
-	//{
-	
-	//}
 }
 
 void ATerrainTile::CalculateNormals()
@@ -382,15 +267,14 @@ void ATerrainTile::CreateTrees()
 			}
 		}
 	}
-
 }
 
 void ATerrainTile::CreateWaterMesh()
 {
 
-	for (int i = 0; i < GridSizeX + Scale; i++)
+	for (int i = 0; i < GridSizeX /*+ Scale*/; i++)
 	{
-		for (int j = 0; j < GridSizeY + Scale; j++)
+		for (int j = 0; j < GridSizeY /*+ Scale*/; j++)
 		{
 			float waterNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / 5, 4, 0.4);
 			if (waterNoise > 0.25)
@@ -430,14 +314,18 @@ void ATerrainTile::CreateWaterMesh()
 
 	for (auto& vertex : WaterVertices)
 	{
-		if (vertex.X != lastXVertex)
+		if (lastXVertex != 0)
 		{
-			inARowX = false;
-		}
-		if (vertex.Y != lastYVertex)
-		{
-			inARowY = false;
-		}
+			if (vertex.X != lastXVertex)
+			{
+
+				inARowX = false;
+			}
+			if (vertex.Y != lastYVertex)
+			{
+				inARowY = false;
+			}
+		}		
 		coords.push_back(vertex.X);
 		coords.push_back(vertex.Y);
 		lastXVertex = vertex.X;
@@ -469,95 +357,6 @@ void ATerrainTile::CreateWaterMesh()
 void ATerrainTile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
-	if (UseCustomMultithreading)
-	{
-		if (mcWorker)
-		{
-			
-			if (mcWorker->InputReady == false && mcWorker->ThreadComplete == true)
-			{
-				//Get data from multithreading worker
-
-				MCVertices.Init(FVector3d{ 0,0,0 }, mcWorker->numVert);
-				MCTriangles.Init(FIndex3i{ 0,0,0 }, mcWorker->numTri);
-
-
-				for (int i = 0; i < mcWorker->numVert; i++)
-				{
-					MCVertices[i] = mcWorker->mcVertices[i];
-				}
-
-				for (int i = 0; i < mcWorker->numTri; i++)
-				{
-					MCTriangles[i] = mcWorker->mcTriangles[i];
-				}
-
-				//delete[] mcWorker->mcVertices;
-				//delete[] mcWorker->mcTriangles;
-
-				if (MCVertices.Num() > 0)
-				{
-					//Convert FIndex3i to Int32
-					for (int i = 0; i < MCTriangles.Num(); i++)
-					{
-						Triangles.Push(int32(MCTriangles[i].A));
-						Triangles.Push(int32(MCTriangles[i].B));
-						Triangles.Push(int32(MCTriangles[i].C));
-					}
-
-					//Scale the vertices
-					for (int i = 0; i < MCVertices.Num(); i++)
-					{
-						MCVertices[i] *= Scale;
-					}
-					Vertices = TArray<FVector>(MCVertices);
-
-					//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
-
-					if (UseCustomNormalsMultithreading)
-					{
-
-						normalsWorker = new FNormalsWorker(Vertices, Triangles, MCTriangles);
-						if (normalsWorker)
-						{
-							normalsWorker->InputReady = true;
-						}
-					}
-					else
-					{
-						//Calculate normals
-						CalculateNormals();
-					}
-
-					//Create Procedural Mesh Section with Marching Cubes data
-					ProcMesh->ClearAllMeshSections();
-					ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
-
-					CreateTrees();
-					CreateWaterMesh();
-
-					mcWorker->ThreadComplete = false;
-					//delete mcWorker;
-				}
-			}
-		}
-	}
-	
-	if(UseCustomNormalsMultithreading)
-	{
-		if (normalsWorker)
-		{
-			if (normalsWorker->ThreadComplete == true)
-			{
-				Normals = normalsWorker->Normals;
-				ProcMesh->UpdateMeshSection(0, Vertices, Normals, UV0, VertexColour, Tangents);
-				//delete normalsWorker;
-				normalsWorker->ThreadComplete = false;
-			}
-		}		
-	}
-
 }
 
 void ATerrainTile::OnConstruction(const FTransform& Transform)

@@ -14,6 +14,8 @@ public:
 	uint32 Run() override; //Main
 	void Stop() override; //Clean
 
+	void InputTiles(TArray<ATerrainTile*> tiles);
+
 	FRunnableThread* Thread;
 	bool RunThread = true;
 	bool InputReady = false;

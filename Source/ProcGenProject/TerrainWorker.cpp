@@ -43,7 +43,6 @@ uint32 FTerrainWorker::Run()
 			InputReady = false;
 			ThreadComplete = true;
 		}
-		RunThread = false;
 	}
 	return 0;
 }
@@ -52,4 +51,9 @@ void FTerrainWorker::Stop()
 {
 	//clean memory
 	RunThread = false;
+}
+
+void FTerrainWorker::InputTiles(TArray<ATerrainTile*> tiles)
+{
+	Tiles = tiles;
 }
