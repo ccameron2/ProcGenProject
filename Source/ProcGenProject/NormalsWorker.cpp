@@ -1,6 +1,4 @@
 #include "NormalsWorker.h"
-#include "ProceduralMeshComponent.h"
-#include "KismetProceduralMeshLibrary.h"
 
 #pragma region Main Thread
 
@@ -34,16 +32,10 @@ uint32 FNormalsWorker::Run()
 {
 	while (RunThread)
 	{
-		if (InputReady)
+		if (InputReady && !ThreadComplete)
 		{
 
 			Normals.Init({ 0,0,0 }, Vertices.Num());
-
-			//TArray< FVector2D > UV0;
-			//TArray <FProcMeshTangent> Tangents;
-
-			//UKismetProceduralMeshLibrary* kismet;
-			//kismet->CalculateTangentsForMesh(Vertices, Triangles, UV0, Normals, Tangents);
 
 			// Map of vertex to triangles in Triangles array
 			TArray<TArray<int32>> VertToTriMap;
@@ -109,9 +101,10 @@ uint32 FNormalsWorker::Run()
 			InputReady = false;
 
 			FPlatformProcess::Sleep(0.01f);
-			
-			RunThread = false;
 
+			ThreadComplete = true;
+
+			RunThread = false;
 		}
 	}
 	return 0;

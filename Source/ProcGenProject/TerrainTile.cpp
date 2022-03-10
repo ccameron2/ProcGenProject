@@ -5,8 +5,6 @@
 #include "Tree.h"
 #include "delaunator.hpp"
 
-
-
 float ATerrainTile::Seed = 0;
 int ATerrainTile::Scale = 0;
 int ATerrainTile::Octaves = 0;
@@ -93,6 +91,52 @@ void ATerrainTile::Init(bool useCustomMultithreading, float seed, int scale, int
 	WaterLevel = waterLevel;
 
 	TreeNoiseValueLimit = treeNoiseValueLimit;
+}
+
+void ATerrainTile::GenerateTerrain()
+{
+	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + 
+									FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
+	FMarchingCubes MarchingCubes;
+	MarchingCubes.Bounds = BoundingBox;
+	MarchingCubes.bParallelCompute = true;
+	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
+	MarchingCubes.CubeSize = 8;
+	MarchingCubes.IsoValue = 0;
+	MarchingCubes.Generate();
+
+	MCTriangles = MarchingCubes.Triangles;
+	MCVertices = MarchingCubes.Vertices;
+
+	if (MCVertices.Num() > 0)
+	{
+		//Convert FIndex3i to Int32
+		for (int i = 0; i < MCTriangles.Num(); i++)
+		{
+			Triangles.Push(int32(MCTriangles[i].A));
+			Triangles.Push(int32(MCTriangles[i].B));
+			Triangles.Push(int32(MCTriangles[i].C));
+		}
+
+		//Scale the vertices
+		for (int i = 0; i < MCVertices.Num(); i++)
+		{
+			MCVertices[i] *= Scale;
+		}
+		Vertices = TArray<FVector>(MCVertices);
+
+		//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
+		CalculateNormals();
+	}
+}
+
+void ATerrainTile::CreateProcMesh()
+{
+	ProcMesh->ClearAllMeshSections();
+	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+
+	CreateTrees();
+	CreateWaterMesh();
 }
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
@@ -239,12 +283,14 @@ void ATerrainTile::CreateMesh()
 			//Create Procedural Mesh Section with Marching Cubes data
 			ProcMesh->ClearAllMeshSections();
 			ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+			CreateTrees();
+			CreateWaterMesh();
 		}
 	}
-	CreateTrees();
+	
 	//if (WaterMeshAdded)
 	//{
-		CreateWaterMesh();
+	
 	//}
 }
 
@@ -429,7 +475,7 @@ void ATerrainTile::Tick(float DeltaTime)
 		if (mcWorker)
 		{
 			
-			if (mcWorker->InputReady == false)
+			if (mcWorker->InputReady == false && mcWorker->ThreadComplete == true)
 			{
 				//Get data from multithreading worker
 
@@ -469,13 +515,29 @@ void ATerrainTile::Tick(float DeltaTime)
 
 					//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 
-					//Calculate normals
-					//CalculateNormals();
+					if (UseCustomNormalsMultithreading)
+					{
+
+						normalsWorker = new FNormalsWorker(Vertices, Triangles, MCTriangles);
+						if (normalsWorker)
+						{
+							normalsWorker->InputReady = true;
+						}
+					}
+					else
+					{
+						//Calculate normals
+						CalculateNormals();
+					}
 
 					//Create Procedural Mesh Section with Marching Cubes data
 					ProcMesh->ClearAllMeshSections();
 					ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
 
+					CreateTrees();
+					CreateWaterMesh();
+
+					mcWorker->ThreadComplete = false;
 					//delete mcWorker;
 				}
 			}
@@ -486,11 +548,12 @@ void ATerrainTile::Tick(float DeltaTime)
 	{
 		if (normalsWorker)
 		{
-			if (normalsWorker->InputReady == false)
+			if (normalsWorker->ThreadComplete == true)
 			{
 				Normals = normalsWorker->Normals;
 				ProcMesh->UpdateMeshSection(0, Vertices, Normals, UV0, VertexColour, Tangents);
 				//delete normalsWorker;
+				normalsWorker->ThreadComplete = false;
 			}
 		}		
 	}

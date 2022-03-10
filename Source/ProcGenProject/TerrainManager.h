@@ -3,7 +3,7 @@
 #pragma once
 
 #include "TerrainTile.h"
-
+#include "TerrainWorker.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TerrainManager.generated.h"
@@ -30,7 +30,7 @@ public:
 		int ChunkSize = 256;
 
 	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		bool UseCustomMultithreading = false;
+		bool UseCustomMultithreading = true;
 
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int Scale = 100;
@@ -85,6 +85,8 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Procgen")
 		TSubclassOf<ATerrainTile> TerrainClass;
+
+	FTerrainWorker* terrainWorker;
 
 protected:
 	// Called when the game starts or when spawned

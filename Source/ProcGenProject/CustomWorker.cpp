@@ -59,6 +59,8 @@ uint32 FCustomWorker::Run()
 			UE_LOG(LogTemp, Warning, TEXT("Thread Finished"));
 			InputReady = false;
 			FPlatformProcess::Sleep(0.01f);
+
+			ThreadComplete = true;
 			RunThread = false;
 		}
 	}

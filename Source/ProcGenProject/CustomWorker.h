@@ -17,13 +17,16 @@ public:
 
 	FRunnableThread* Thread;
 	bool RunThread;
-	bool InputReady;
+	bool InputReady = false;
+	bool ThreadComplete = false;
+
 	FAxisAlignedBox3d BoundingBox;
 	FIndex3i* mcTriangles;
 	FVector3d* mcVertices;
 	int numTri;
 	int numVert;
 	FMarchingCubes MarchingCubes;
+	
 
 private:
 };

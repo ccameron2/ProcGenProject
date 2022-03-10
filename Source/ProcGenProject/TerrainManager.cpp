@@ -5,6 +5,7 @@
 #include "Kismet\GameplayStatics.h"
 #include <math.h>
 
+
 float ATerrainManager::seed = 0;
 int	  ATerrainManager::scale = 0;
 int   ATerrainManager::octaves = 0;
@@ -51,21 +52,19 @@ void ATerrainManager::BeginPlay()
 		{
 			FVector Location((PlayerGridPosition.X + x) * ChunkSize, (PlayerGridPosition.Y + y) * ChunkSize, 0.0f);
 			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			//FActorSpawnParameters SpawnParams;
-			//ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-			UWorld* World = GetWorld();
 			FTransform SpawnParams(Rotation, Location);
-			ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
+			ATerrainTile* tile = GetWorld()->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
 			tile->Init(UseCustomMultithreading, Seed, Scale, Octaves,SurfaceFrequency,CaveFrequency,
 						NoiseScale, SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale,
 							TreeNoiseScale, TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel);
-			UGameplayStatics::FinishSpawningActor(tile, SpawnParams);
-
+			//UGameplayStatics::FinishSpawningActor(tile, SpawnParams);
 			//tile->FinishSpawning(SpawnParams);
-			tile->CreateMesh();
 			TileArray.Push(tile);
 		}
 	}
+
+	terrainWorker = new FTerrainWorker(TileArray);
+	//terrainWorker->InputReady = true;
 }
 
 FVector2D ATerrainManager::GetPlayerGridPosition()
@@ -125,26 +124,25 @@ void ATerrainManager::Tick(float DeltaTime)
 					tile->CreateMesh();
 					TileArray.Push(tile);
 				}
-
 			}
 		}
-
 	}
 
-	LastPlayerPosition = PlayerGridPosition;
-
-	/*if (CurrentTileIndex > TileArray.Num() - TileX)
+	if (terrainWorker->ThreadComplete)
 	{
-		for (int i = 0; i < TileX; i++)
+		for (auto& tile : TileArray)
 		{
-			FVector Location((GetPlayerGridPosition().X + i) * ChunkSize, (GetPlayerGridPosition().Y) * ChunkSize, 0.0f);
-			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			FActorSpawnParameters SpawnParams;
-			ATerrainTile* tile = GetWorld()->SpawnActor<ATerrainTile>(Location, Rotation, SpawnParams);
-			TileArray.Push(tile);
+			if (!tile->MeshCreated)
+			{
+				tile->CreateProcMesh();
+				tile->MeshCreated = true;
+				FTransform SpawnParams(tile->GetActorRotation(), tile->GetActorLocation());
+				tile->FinishSpawning(SpawnParams);
+			}
 		}
-		return;
-	}*/
+	}
+
+	LastPlayerPosition = PlayerGridPosition;	
 }
 
 double ATerrainManager::PerlinWrapper(FVector3<double> perlinInput)

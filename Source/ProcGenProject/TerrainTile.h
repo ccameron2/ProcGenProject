@@ -47,6 +47,12 @@ public:
 				float caveFrequency, int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale,
 					int caveNoiseScale, int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit,
 						int waterLevel);
+
+	void GenerateTerrain();
+
+	void CreateProcMesh();
+
+	bool MeshCreated = false;
 	
 	bool UseCustomMultithreading;
 	static float Seed;
@@ -151,7 +157,7 @@ public:
 
 	static bool WaterMeshAdded;
 
-	bool UseCustomNormalsMultithreading = true;
+	bool UseCustomNormalsMultithreading = false;
 
 	FNormalsWorker* normalsWorker = nullptr;
 

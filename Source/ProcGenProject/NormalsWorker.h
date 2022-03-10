@@ -17,7 +17,8 @@ public:
 
 	FRunnableThread* Thread;
 	bool RunThread;
-	bool InputReady;
+	bool InputReady = false;
+	bool ThreadComplete = false;
 
 	TArray<FVector> Normals;
 	TArray<FVector> Vertices;
