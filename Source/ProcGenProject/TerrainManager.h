@@ -21,10 +21,7 @@ public:
 	TArray<ATerrainTile*> TileArray;
 
 	UPROPERTY(EditAnywhere,Category = "Chunks")
-		int TileX = 10;
-
-	UPROPERTY(EditAnywhere, Category = "Chunks")
-		int TileY = 10;
+		int RenderDistance = 5;
 
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int ChunkSize = 256;
@@ -35,31 +32,37 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Chunks")
 		int Scale = 100;
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		float Seed = 875694;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		float Seed = 875694;			
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int Octaves = 10;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		int Octaves = 10;				
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		float SurfaceFrequency = 0.35;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		float SurfaceFrequency = 0.35;	
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		float CaveFrequency = 1;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		float CaveFrequency = 1;		
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int NoiseScale = 50;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		int NoiseScale = 50;			
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int SurfaceLevel = 900;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		int SurfaceLevel = 900;			
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int CaveLevel = 700;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		int CaveLevel = 700;			
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
-		int SurfaceNoiseScale = 18;
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		int OverallNoiseScale = 23;		
 
-	UPROPERTY(EditAnywhere, Category = "ProcGen")
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		int SurfaceNoiseScale = 18;		
+
+	UPROPERTY(EditAnywhere, Category = "Terrain")
+		bool GenerateCaves = true;	
+
+	UPROPERTY(EditAnywhere, Category = "Terrain")
 		int CaveNoiseScale = 6;
 
 	UPROPERTY(EditAnywhere, Category = "Trees")
@@ -77,6 +80,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Water")
 		float WaterLevel = 800;
 
+	UPROPERTY(EditAnywhere, Category = "Water")
+		float WaterNoiseScale = 5;
+
+	UPROPERTY(EditAnywhere, Category = "Water")
+		float WaterOctaves = 4;
+
+	UPROPERTY(EditAnywhere, Category = "Water")
+		float WaterFrequency = 0.4;
+
+	UPROPERTY(EditAnywhere, Category = "Water")
+		float WaterNoiseValueLimit = 0.25;
+
+	void CreateTileArray();
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);
 	bool IsAlreadyThere(FVector2D position);

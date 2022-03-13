@@ -19,25 +19,8 @@ void ATerrainManager::BeginPlay()
 	auto PlayerGridPosition = GetPlayerGridPosition();
 	PlayerGridPosition.X = round(PlayerGridPosition.X);
 	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
-	auto CurrentTileIndex = PlayerGridPosition.X + (PlayerGridPosition.Y * TileX);
 
-	for (int x = -TileX; x < TileX; x++)
-	{
-		for (int y = -TileY; y < TileY; y++)
-		{
-			FVector Location((PlayerGridPosition.X + x) * ChunkSize, (PlayerGridPosition.Y + y) * ChunkSize, 0.0f);
-			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			FTransform SpawnParams(Rotation, Location);
-
-			ATerrainTile* tile = GetWorld()->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
-
-			tile->Init(Seed, Scale, ChunkSize, ChunkHeight, Octaves,SurfaceFrequency,CaveFrequency, NoiseScale,
-						SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale, TreeNoiseScale, 
-							TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel);
-
-			TileArray.Push(tile);
-		}
-	}
+	CreateTileArray();
 
 	terrainWorker = std::make_unique<FTerrainWorker>(TileArray);
 }
@@ -73,37 +56,6 @@ bool ATerrainManager::IsAlreadyThere(FVector2D position)
 void ATerrainManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	auto PlayerGridPosition = GetPlayerGridPosition();
-	PlayerGridPosition.X = round(PlayerGridPosition.X);
-	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
-
-	if (PlayerGridPosition != LastPlayerPosition)
-	{
-		for (int x = -TileX; x < TileX; x++)
-		{
-			for (int y = -TileY; y < TileY; y++)
-			{
-				FVector Location((PlayerGridPosition.X + x) * ChunkSize, (PlayerGridPosition.Y + y) * ChunkSize, 0.0f);
-				if (!IsAlreadyThere(FVector2D{ PlayerGridPosition.X + x,PlayerGridPosition.Y + y }))
-				{	
-					FRotator Rotation(0.0f, 0.0f, 0.0f);
-					UWorld* World = GetWorld();
-					FTransform SpawnParams(Rotation, Location);
-					ATerrainTile* tile = World->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
-					tile->Init(Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
-								SurfaceLevel, CaveLevel, SurfaceNoiseScale, CaveNoiseScale, TreeNoiseScale,
-									TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel);
-					TileArray.Push(tile);
-					
-				}
-			}
-		}
-		if (terrainWorker->ThreadComplete)
-		{
-			terrainWorker->InputTiles(TileArray);
-			terrainWorker->ThreadComplete = false;
-		}
-	}
 
 	if (terrainWorker)
 	{
@@ -112,8 +64,8 @@ void ATerrainManager::Tick(float DeltaTime)
 			for (auto& tile : TileArray)
 			{
 				if (!tile->MeshCreated)
-				{
-   					tile->CreateProcMesh();
+				{					
+					tile->CreateProcMesh();
 					tile->MeshCreated = true;
 					FTransform SpawnParams(tile->GetActorRotation(), tile->GetActorLocation());
 					tile->FinishSpawning(SpawnParams);
@@ -121,6 +73,71 @@ void ATerrainManager::Tick(float DeltaTime)
 			}
 		}
 	}
+
+	auto PlayerGridPosition = GetPlayerGridPosition();
+	PlayerGridPosition.X = round(PlayerGridPosition.X);
+	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
+
+	if (terrainWorker->ThreadComplete)
+	{
+		for (int i = 0; i < TileArray.Num(); i++)
+		{
+			auto PlayerLocation = FVector{ PlayerGridPosition.X * 255, PlayerGridPosition.Y * 255,0 };
+			//auto PlayerLocation = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+			auto TileLocation = TileArray[i]->GetActorLocation();
+			//TileLocation *= Scale;
+			auto Distance = (PlayerLocation - TileLocation).Size();
+			auto MaxDistance = (((RenderDistance + 1) * ChunkSize));
+
+			if (Distance > MaxDistance)
+			{
+				TileArray[i]->RemoveTrees();
+				TileArray[i]->Destroy();
+				TileArray.RemoveAt(i);
+			}
+		}
+	}
+
+	
+
+	if (PlayerGridPosition != LastPlayerPosition)
+	{
+		
+		CreateTileArray();
+		if (terrainWorker->ThreadComplete)
+		{
+			terrainWorker->InputTiles(TileArray);
+			terrainWorker->ThreadComplete = false;
+		}
+	}
 	
 	LastPlayerPosition = PlayerGridPosition;	
+}
+
+void ATerrainManager::CreateTileArray()
+{
+	auto PlayerGridPosition = GetPlayerGridPosition();
+	PlayerGridPosition.X = round(PlayerGridPosition.X);
+	PlayerGridPosition.Y = round(PlayerGridPosition.Y);
+
+	for (int x = -RenderDistance; x < RenderDistance; x++)
+	{
+		for (int y = -RenderDistance; y < RenderDistance; y++)
+		{
+			if (!IsAlreadyThere(FVector2D{ PlayerGridPosition.X + x,PlayerGridPosition.Y + y }))
+			{
+				FVector Location(((PlayerGridPosition.X + x) * ChunkSize) /** Scale*/, ((PlayerGridPosition.Y + y) * ChunkSize) /** Scale*/, 0.0f);
+				FRotator Rotation(0.0f, 0.0f, 0.0f);
+				FTransform SpawnParams(Rotation, Location);
+
+				ATerrainTile* tile = GetWorld()->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
+
+				tile->Init(Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
+					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves,CaveNoiseScale, TreeNoiseScale,
+					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel, WaterNoiseScale, WaterOctaves, WaterFrequency, WaterNoiseValueLimit);
+
+				TileArray.Push(tile);
+			}
+		}
+	}
 }

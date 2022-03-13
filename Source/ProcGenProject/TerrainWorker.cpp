@@ -5,7 +5,6 @@
 FTerrainWorker::FTerrainWorker(TArray<ATerrainTile*> tiles)
 {
 	Tiles = tiles;
-
 	Thread = FRunnableThread::Create(this, TEXT("Thread"));
 }
 
@@ -29,20 +28,25 @@ bool FTerrainWorker::Init()
 
 uint32 FTerrainWorker::Run()
 {
+	
 	while (RunThread)
 	{
 		if (!ThreadComplete)
 		{
-			for (auto& tile : Tiles)
+			if (CriticalSection.TryLock())
 			{
-				if (!tile->MeshCreated)
+				for (auto& tile : Tiles)
 				{
-					tile->GenerateTerrain();
-				}			
+					if (!tile->MeshCreated)
+					{
+						tile->GenerateTerrain();
+					}
+				}
+				InputReady = false;
+				ThreadComplete = true;
 			}
-			InputReady = false;
-			ThreadComplete = true;
-		}
+			CriticalSection.Unlock();
+		}		
 	}
 	return 0;
 }

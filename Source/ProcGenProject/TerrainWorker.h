@@ -17,6 +17,7 @@ public:
 	void InputTiles(TArray<ATerrainTile*> tiles);
 
 	FRunnableThread* Thread;
+	FCriticalSection CriticalSection;
 	bool RunThread = true;
 	bool InputReady = false;
 	bool ThreadComplete = false;

@@ -12,7 +12,9 @@ float ATerrainTile::CaveFrequency = 0;
 int ATerrainTile::NoiseScale = 0;
 int ATerrainTile::SurfaceLevel = 0;
 int ATerrainTile::CaveLevel = 0;
+int ATerrainTile::OverallNoiseScale = 0;
 int ATerrainTile::SurfaceNoiseScale = 0;
+bool ATerrainTile::GenerateCaves = false;
 int ATerrainTile::CaveNoiseScale = 0;
 
 // Sets default values
@@ -44,9 +46,11 @@ void ATerrainTile::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ATerrainTile::Init(float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency, 
-							int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale,
-								int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel)
+void ATerrainTile::Init(
+	float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+		float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
+			float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
+				float waterFrequency, float waterNoiseValueLimit )
 {
 	Seed = seed;
 	Scale = scale;
@@ -59,6 +63,7 @@ void ATerrainTile::Init(float seed, int scale, int chunkSize, int chunkHeight, i
 	NoiseScale = noiseScale;
 	SurfaceLevel = surfaceLevel;
 	CaveLevel = caveLevel;
+	OverallNoiseScale = overallNoiseScale;
 	SurfaceNoiseScale = surfaceNoiseScale;
 	CaveNoiseScale = caveNoiseScale;
 	TreeNoiseScale = treeNoiseScale;
@@ -66,6 +71,11 @@ void ATerrainTile::Init(float seed, int scale, int chunkSize, int chunkHeight, i
 	TreeFrequency = treeFrequency;
 	WaterLevel = waterLevel;
 	TreeNoiseValueLimit = treeNoiseValueLimit;
+	GenerateCaves = generateCaves;
+	WaterNoiseScale = waterNoiseScale;
+	WaterOctaves = waterOctaves;
+	WaterFrequency = waterFrequency;
+	WaterNoiseValueLimit = waterNoiseValueLimit;
 }
 
 void ATerrainTile::GenerateTerrain()
@@ -76,8 +86,8 @@ void ATerrainTile::GenerateTerrain()
 	Tangents.Empty();
 	UV0.Empty();
 
-	FAxisAlignedBox3d BoundingBox(GetActorLocation(), FVector3d(GetActorLocation()) + 
-									FVector3d{ double(GridSizeX) , double(GridSizeY) , double(GridSizeZ) });
+	FAxisAlignedBox3d BoundingBox(FVector3d(GetActorLocation()) - (FVector3d{ double(GridSizeX) , double(GridSizeY),0 } / 2), FVector3d(GetActorLocation() /*/ Scale*/) +
+									FVector3d{ double(GridSizeX / 2) , double(GridSizeY / 2) , double(GridSizeZ) });
 	FMarchingCubes MarchingCubes;
 	MarchingCubes.Bounds = BoundingBox;
 	MarchingCubes.bParallelCompute = true;
@@ -104,10 +114,34 @@ void ATerrainTile::GenerateTerrain()
 		{
 			MCVertices[i] *= Scale;
 		}
+
 		Vertices = TArray<FVector>(MCVertices);
 
 		//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
 		CalculateNormals();
+
+		//	float minX = -INT_MAX;
+		//	float minY = -INT_MAX;
+		//	float maxX = INT_MAX;
+		//	float maxY = INT_MAX;
+
+		//	for (auto& vertex : Vertices)
+		//	{
+		//		minX = FMath::Min(minX, vertex.X);
+		//		minY = FMath::Min(minY, vertex.Y);
+		//		maxX = FMath::Max(maxX, vertex.X);
+		//		maxY = FMath::Max(maxY, vertex.Y);
+		//	}
+		//	float kX = 1 / (maxX - minX);
+		//	float kY = 1 / (maxY - minY);
+
+		//	UV0.Init(FVector2D{ 0, 0 }, Vertices.Num());
+
+		//	for (int i = 0; i < Vertices.Num(); i++)
+		//	{
+		//		UV0[i].X = (Vertices[i].X - minX) * kX;
+		//		UV0[i].Y = (Vertices[i].Y - minY) * kY;
+		//	}
 	}
 }
 
@@ -124,7 +158,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	//Scale noise input
 	FVector3d noiseInput = (perlinInput + FVector{ Seed,Seed,0 }) / NoiseScale;
 
-	float density = ( -noiseInput.Z / 23 ) + 1;
+	float density = ( -noiseInput.Z / OverallNoiseScale ) + 1;
 
 	//Add 3D noise partially
 	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
@@ -134,31 +168,57 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 
 	float density2 = FractalBrownianMotion(FVector(noiseInput / CaveNoiseScale), Octaves, CaveFrequency);
 
-	if (perlinInput.Z < 1)//Cave floors
-	{
-		return 1;
-	}
+	//if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.8) > 0.4)
+	//{
+	//	if (perlinInput.Z >= SurfaceLevel * Scale)
+	//	{
+	//		return density - 0.2;
+	//	}
+	//}
 
-	if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.8) > 0.4)
+	if (GenerateCaves)
 	{
-		if (perlinInput.Z >= SurfaceLevel * Scale)
+		if (perlinInput.Z >= SurfaceLevel)//640
 		{
-			return density - 0.2;
+			return density;
 		}
-	}
-	
-	if (perlinInput.Z >= SurfaceLevel)//640
-	{
-		return density;
-	}
-	else if(perlinInput.Z < CaveLevel)//384
-	{
-		return density2;
+		else if (perlinInput.Z < CaveLevel)//384
+		{
+			return density2;
+		}
+		else if (perlinInput.Z < 1)//Cave floors
+		{
+			return 1;
+		}
+		else
+		{
+			return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
+		}
+		
 	}
 	else
 	{
-		return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
+		if (perlinInput.Z >= SurfaceLevel)//640
+		{
+			return density;
+		}
+		else if (perlinInput.Z == CaveLevel)//384
+		{
+			return 1;
+		}
+		else if (perlinInput.Z < CaveLevel)//384
+		{
+			return -1;
+		}
+		else
+		{
+			return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
+		}
 	}
+	
+
+	return 1;
+
 }
 
 float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, float frequency)
@@ -233,9 +293,9 @@ void ATerrainTile::CalculateNormals()
 
 void ATerrainTile::CreateTrees()
 {
-	for (int i = 0; i < GridSizeX; i+=8)
+	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i+=8)
 	{
-		for (int j = 0; j < GridSizeY; j+=8)
+		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j += 8)
 		{
 			float treeNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / TreeNoiseScale,TreeOctaves,TreeFrequency);
 			if (treeNoise > TreeNoiseValueLimit	)
@@ -257,8 +317,9 @@ void ATerrainTile::CreateTrees()
 						ATree* tree = GetWorld()->SpawnActor<ATree>(TreeClass, Location, Rotation, SpawnParams);
 						if (tree != nullptr)
 						{
+							tree->SetOwner(this);
 							tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
-							tree->TreeMesh->SetStaticMesh(treeMeshList[FMath::RandRange(0, treeMeshList.Num() - 1)]);
+							tree->TreeMesh->SetStaticMesh(TreeMeshList[FMath::RandRange(0, TreeMeshList.Num() - 1)]);
 							TreeList.Push(tree);
 						}
 					}			
@@ -269,15 +330,24 @@ void ATerrainTile::CreateTrees()
 	}
 }
 
+void ATerrainTile::RemoveTrees()
+{
+	for (auto& tree : TreeList)
+	{
+		tree->Destroy();
+	}
+}
+
 void ATerrainTile::CreateWaterMesh()
 {
 
-	for (int i = 0; i < GridSizeX /*+ Scale*/; i++)
+	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i++)
 	{
-		for (int j = 0; j < GridSizeY /*+ Scale*/; j++)
+		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j++)
 		{
-			float waterNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / 5, 4, 0.4);
-			if (waterNoise > 0.25)
+			//5,4,0.4,0.25
+			float waterNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / WaterNoiseScale , WaterOctaves, WaterFrequency);
+			if (waterNoise > WaterNoiseValueLimit)
 			{
 				FHitResult Hit;
 				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
@@ -345,6 +415,12 @@ void ATerrainTile::CreateWaterMesh()
 			}
 		}	
 	}
+
+	//for (auto& vertex : WaterVertices)
+	//{
+	//	vertex.X *= 2;
+	//	vertex.Y *= 2;
+	//}
 
 	UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);

@@ -35,14 +35,15 @@ public:
 
 	void CreateTrees();
 
+	void RemoveTrees();
+
 	void CreateWaterMesh();
 
-	//void AssignTriangles();
-	//void AssignColours();
-
-	void Init(float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
-				int noiseScale, int surfaceLevel, int caveLevel, int surfaceNoiseScale, int caveNoiseScale,
-					int treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel);
+	void Init(
+		float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+			float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
+				float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
+					float waterFrequency, float waterNoiseValueLimit);
 
 	void GenerateTerrain();
 
@@ -58,8 +59,10 @@ public:
 	static int NoiseScale;
 	static int SurfaceLevel;
 	static int CaveLevel;
+	static int OverallNoiseScale;
 	static int SurfaceNoiseScale;
 	static int CaveNoiseScale;
+	static bool GenerateCaves;
 
 	int TreeNoiseScale;
 	int TreeOctaves;
@@ -67,6 +70,10 @@ public:
 	float TreeNoiseValueLimit;
 	
 	int WaterLevel;
+	float WaterNoiseScale;
+	int WaterOctaves;
+	float WaterFrequency;
+	float WaterNoiseValueLimit;
 
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
@@ -139,7 +146,7 @@ public:
 		TSubclassOf<class ATree> TreeClass;
 
 	UPROPERTY(EditAnywhere, Category = "Trees")
-	TArray<UStaticMesh*> treeMeshList;
+	TArray<UStaticMesh*> TreeMeshList;
 
 	TArray<ATree*> TreeList;
 
