@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the DescrSiption page of Project Settings.
 #include "TerrainTile.h"
 #include "KismetProceduralMeshLibrary.h"
-#include "Tree.h"
+
 #include "delaunator.hpp"
 
 int ATerrainTile::CubeSize = 0;
@@ -54,7 +54,7 @@ void ATerrainTile::Init(
 	int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 		float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 			float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
-				float waterFrequency, float waterNoiseValueLimit )
+				float waterFrequency, float waterNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, float rockNoiseValueLimit)
 {
 	CubeSize = cubeSize;
 	Seed = seed;
@@ -81,6 +81,11 @@ void ATerrainTile::Init(
 	WaterOctaves = waterOctaves;
 	WaterFrequency = waterFrequency;
 	WaterNoiseValueLimit = waterNoiseValueLimit;
+	RockNoiseScale = rockNoiseScale;
+	RockOctaves = rockOctaves;
+	RockFrequency = rockFrequency;
+	RockNoiseValueLimit = rockNoiseValueLimit;
+
 }
 
 void ATerrainTile::GenerateTerrain()
@@ -136,6 +141,7 @@ void ATerrainTile::CreateProcMesh()
 	RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
 	CreateTrees();
 	CreateWaterMesh();
+	CreateRocks();
 }
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
@@ -305,7 +311,7 @@ void ATerrainTile::CreateTrees()
 						if (tree != nullptr)
 						{
 							tree->SetOwner(this);
-							tree->SetActorScale3D(FVector{ float(10), float(10), float(10) });
+							tree->SetActorScale3D(FVector{ float(Scale / 5), float(Scale / 5), float(Scale / 5) });
 							tree->TreeMesh->SetStaticMesh(TreeMeshList[FMath::RandRange(0, TreeMeshList.Num() - 1)]);
 							TreeList.Push(tree);
 						}
@@ -322,6 +328,15 @@ void ATerrainTile::RemoveTrees()
 	for (auto& tree : TreeList)
 	{
 		tree->Destroy();
+	}
+}
+
+
+void ATerrainTile::RemoveRocks()
+{
+	for (auto& rock : RockList)
+	{
+		rock->Destroy();
 	}
 }
 
@@ -409,6 +424,45 @@ void ATerrainTile::CreateWaterMesh()
 
 	ProcMesh->CreateMeshSection(1, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
 	ProcMesh->SetMaterial(1, WaterMeshMaterial);
+}
+
+void ATerrainTile::CreateRocks()
+{
+	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i += 8)
+	{
+		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j += 8)
+		{
+			float treeNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / RockNoiseScale, RockOctaves, RockFrequency);
+			if (treeNoise > RockNoiseValueLimit)
+			{
+				FHitResult Hit;
+				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
+				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(CaveLevel * Scale) };
+				ECollisionChannel Channel = ECC_Visibility;
+				FCollisionQueryParams Params;
+				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
+				FVector Location = Hit.Location + FVector{ 0,0,float(Scale / 2) };
+				if (Hit.Location != FVector{ 0, 0, 0 })
+				{
+					if (Hit.Location.Z > (WaterLevel)*Scale)
+					{
+						FRotator Rotation = { 0,float(FMath::Rand()),0 };
+						FActorSpawnParameters SpawnParams;
+						//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
+						ARock* rock = GetWorld()->SpawnActor<ARock>(RockClass, (Location - FVector{0,0,float( - Scale)}), Rotation, SpawnParams);
+						if (rock != nullptr)
+						{
+							rock->SetOwner(this);
+							rock->SetActorScale3D(FVector{ float(Scale / 10), float(Scale / 10), float(Scale / 10) });
+							rock->RockMesh->SetStaticMesh(RockMeshList[FMath::RandRange(0, RockMeshList.Num() - 1)]);
+							RockList.Push(rock);
+						}
+					}
+				}
+
+			}
+		}
+	}
 }
 
 // Called every frame

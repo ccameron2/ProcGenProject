@@ -92,6 +92,7 @@ void ATerrainManager::Tick(float DeltaTime)
 			if (Distance > MaxDistance)
 			{
 				TileArray[i]->RemoveTrees();
+				TileArray[i]->RemoveRocks();
 				TileArray[i]->Destroy();
 				TileArray.RemoveAt(i);
 			}
@@ -133,8 +134,9 @@ void ATerrainManager::CreateTileArray()
 				ATerrainTile* tile = GetWorld()->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
 
 				tile->Init(CubeSize, Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
-					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves,CaveNoiseScale, TreeNoiseScale,
-					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel, WaterNoiseScale, WaterOctaves, WaterFrequency, WaterNoiseValueLimit);
+						SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves,CaveNoiseScale, TreeNoiseScale,
+						TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel, WaterNoiseScale, WaterOctaves, WaterFrequency, 
+						WaterNoiseValueLimit, RockNoiseScale,RockOctaves ,RockFrequency,RockNoiseValueLimit);
 
 				TileArray.Push(tile);
 			}

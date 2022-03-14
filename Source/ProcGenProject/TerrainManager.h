@@ -87,13 +87,26 @@ public:
 		float WaterNoiseScale = 5;
 
 	UPROPERTY(EditAnywhere, Category = "Water")
-		float WaterOctaves = 4;
+		int WaterOctaves = 4;
 
 	UPROPERTY(EditAnywhere, Category = "Water")
 		float WaterFrequency = 0.4;
 
 	UPROPERTY(EditAnywhere, Category = "Water")
 		float WaterNoiseValueLimit = 0.25;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		float RockNoiseScale = 5;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		int RockOctaves = 4;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		float RockFrequency = 0.4;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		float RockNoiseValueLimit = 0.25;
+
 
 	void CreateTileArray();
 	FVector2D GetPlayerGridPosition();

@@ -8,6 +8,8 @@
 #include "VectorTypes.h"
 #include "GameFramework/Actor.h"
 //#include "Components/RuntimeMeshComponentStatic.h"
+#include "Tree.h"
+#include "Rock.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -44,9 +46,12 @@ public:
 		int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 			float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 				float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
-					float waterFrequency, float waterNoiseValueLimit);
+					float waterFrequency, float waterNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, float rockNoiseValueLimit);
 
 	void GenerateTerrain();
+
+	void CreateRocks();
+	void RemoveRocks();
 
 	void CreateProcMesh();
 
@@ -76,6 +81,11 @@ public:
 	int WaterOctaves;
 	float WaterFrequency;
 	float WaterNoiseValueLimit;
+
+	float RockNoiseScale;
+	int	  RockOctaves;
+	float RockFrequency;
+	float RockNoiseValueLimit;
 
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
@@ -155,4 +165,11 @@ public:
 
 	TArray<ATree*> TreeList;
 
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		TSubclassOf<class ARock> RockClass;
+
+	UPROPERTY(EditAnywhere, Category = "Trees")
+		TArray<UStaticMesh*> RockMeshList;
+
+	TArray<ARock*> RockList;
 };
