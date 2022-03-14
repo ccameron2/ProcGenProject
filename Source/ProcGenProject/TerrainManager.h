@@ -20,6 +20,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Chunks")
 	TArray<ATerrainTile*> TileArray;
 
+	UPROPERTY(EditAnywhere, Category = "Chunks")
+		int CubeSize = 8;
+
 	UPROPERTY(EditAnywhere,Category = "Chunks")
 		int RenderDistance = 5;
 

@@ -7,6 +7,7 @@
 #include "Generators/MarchingCubes.h"
 #include "VectorTypes.h"
 #include "GameFramework/Actor.h"
+//#include "Components/RuntimeMeshComponentStatic.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -40,7 +41,7 @@ public:
 	void CreateWaterMesh();
 
 	void Init(
-		float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+		int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 			float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 				float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
 					float waterFrequency, float waterNoiseValueLimit);
@@ -51,6 +52,7 @@ public:
 
 	bool MeshCreated = false;
 	
+	static int CubeSize;
 	static float Seed;
 	static int Scale;
 	static int Octaves;
@@ -81,8 +83,11 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* WaterMeshMaterial;
 
-	UPROPERTY(EditAnywhere, Category = "ProcMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UProceduralMeshComponent* ProcMesh;
+
+	//UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
+	//	URuntimeMeshComponentStatic* RuntimeMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		int GridSizeX = 256;
@@ -121,7 +126,7 @@ public:
 
 	TArray<FVector3d> MCVertices;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
+	UPROPERTY(VisibleAnywhere, Category = "Water")
 		UStaticMeshComponent* WaterMesh;
 
 	UPROPERTY()

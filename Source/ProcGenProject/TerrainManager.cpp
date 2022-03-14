@@ -132,7 +132,7 @@ void ATerrainManager::CreateTileArray()
 
 				ATerrainTile* tile = GetWorld()->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
 
-				tile->Init(Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
+				tile->Init(CubeSize, Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
 					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves,CaveNoiseScale, TreeNoiseScale,
 					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel, WaterNoiseScale, WaterOctaves, WaterFrequency, WaterNoiseValueLimit);
 

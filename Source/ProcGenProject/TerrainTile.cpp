@@ -4,6 +4,7 @@
 #include "Tree.h"
 #include "delaunator.hpp"
 
+int ATerrainTile::CubeSize = 0;
 float ATerrainTile::Seed = 0;
 int ATerrainTile::Scale = 0;
 int ATerrainTile::Octaves = 0;
@@ -27,6 +28,9 @@ ATerrainTile::ATerrainTile()
 	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
 	SetRootComponent(ProcMesh);
 
+/*	RuntimeMesh = CreateDefaultSubobject<URuntimeMeshComponentStatic>(TEXT("Runtime Mesh"));
+	SetRootComponent(RuntimeMesh)*/;
+
 	WaterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Water Mesh"));
 	WaterMesh->SetupAttachment(RootComponent);
 	WaterMesh->SetRelativeLocation(FVector{ 0,0,float((SurfaceLevel * Scale) - (10 * Scale)) });
@@ -47,11 +51,12 @@ void ATerrainTile::BeginPlay()
 }
 
 void ATerrainTile::Init(
-	float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+	int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 		float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 			float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
 				float waterFrequency, float waterNoiseValueLimit )
 {
+	CubeSize = cubeSize;
 	Seed = seed;
 	Scale = scale;
 	GridSizeX = chunkSize;
@@ -88,16 +93,17 @@ void ATerrainTile::GenerateTerrain()
 
 	FAxisAlignedBox3d BoundingBox(FVector3d(GetActorLocation()) - (FVector3d{ double(GridSizeX) , double(GridSizeY),0 } / 2), FVector3d(GetActorLocation() /*/ Scale*/) +
 									FVector3d{ double(GridSizeX / 2) , double(GridSizeY / 2) , double(GridSizeZ) });
-	FMarchingCubes MarchingCubes;
-	MarchingCubes.Bounds = BoundingBox;
-	MarchingCubes.bParallelCompute = true;
-	MarchingCubes.Implicit = ATerrainTile::PerlinWrapper;
-	MarchingCubes.CubeSize = 8;
-	MarchingCubes.IsoValue = 0;
-	MarchingCubes.Generate();
 
-	MCTriangles = MarchingCubes.Triangles;
-	MCVertices = MarchingCubes.Vertices;
+	std::unique_ptr<FMarchingCubes> MarchingCubes = std::make_unique<FMarchingCubes>();
+	MarchingCubes->Bounds = BoundingBox;
+	MarchingCubes->bParallelCompute = true;
+	MarchingCubes->Implicit = ATerrainTile::PerlinWrapper;
+	MarchingCubes->CubeSize = CubeSize;
+	MarchingCubes->IsoValue = 0;
+	MarchingCubes->Generate();
+
+	MCTriangles = MarchingCubes->Triangles;
+	MCVertices = MarchingCubes->Vertices;
 
 	if (MCVertices.Num() > 0)
 	{
@@ -116,32 +122,8 @@ void ATerrainTile::GenerateTerrain()
 		}
 
 		Vertices = TArray<FVector>(MCVertices);
-
-		//UV0 = TArray<FVector2D>(MarchingCubes.UVs);
+	
 		CalculateNormals();
-
-		//	float minX = -INT_MAX;
-		//	float minY = -INT_MAX;
-		//	float maxX = INT_MAX;
-		//	float maxY = INT_MAX;
-
-		//	for (auto& vertex : Vertices)
-		//	{
-		//		minX = FMath::Min(minX, vertex.X);
-		//		minY = FMath::Min(minY, vertex.Y);
-		//		maxX = FMath::Max(maxX, vertex.X);
-		//		maxY = FMath::Max(maxY, vertex.Y);
-		//	}
-		//	float kX = 1 / (maxX - minX);
-		//	float kY = 1 / (maxY - minY);
-
-		//	UV0.Init(FVector2D{ 0, 0 }, Vertices.Num());
-
-		//	for (int i = 0; i < Vertices.Num(); i++)
-		//	{
-		//		UV0[i].X = (Vertices[i].X - minX) * kX;
-		//		UV0[i].Y = (Vertices[i].Y - minY) * kY;
-		//	}
 	}
 }
 
@@ -149,6 +131,9 @@ void ATerrainTile::CreateProcMesh()
 {
 	ProcMesh->ClearAllMeshSections();
 	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);
+	
+	/*RuntimeMesh->SetupMaterialSlot(0, TEXT("TerrainMat"), Material);
+	RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
 	CreateTrees();
 	CreateWaterMesh();
 }
@@ -178,6 +163,11 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 
 	if (GenerateCaves)
 	{
+		if (perlinInput.Z < 1)//Cave floors
+		{
+			return 1;
+		}
+
 		if (perlinInput.Z >= SurfaceLevel)//640
 		{
 			return density;
@@ -185,10 +175,6 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 		else if (perlinInput.Z < CaveLevel)//384
 		{
 			return density2;
-		}
-		else if (perlinInput.Z < 1)//Cave floors
-		{
-			return 1;
 		}
 		else
 		{
@@ -198,13 +184,14 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	}
 	else
 	{
+		if (perlinInput.Z == CaveLevel)//384
+		{
+			return 1;
+		}
+
 		if (perlinInput.Z >= SurfaceLevel)//640
 		{
 			return density;
-		}
-		else if (perlinInput.Z == CaveLevel)//384
-		{
-			return 1;
 		}
 		else if (perlinInput.Z < CaveLevel)//384
 		{
@@ -212,7 +199,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 		}
 		else
 		{
-			return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
+			return FMath::Lerp(density2 + 0.1f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
 		}
 	}
 	
@@ -297,7 +284,7 @@ void ATerrainTile::CreateTrees()
 	{
 		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j += 8)
 		{
-			float treeNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / TreeNoiseScale,TreeOctaves,TreeFrequency);
+			float treeNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / TreeNoiseScale,TreeOctaves,TreeFrequency);
 			if (treeNoise > TreeNoiseValueLimit	)
 			{
 				FHitResult Hit;
@@ -346,7 +333,7 @@ void ATerrainTile::CreateWaterMesh()
 		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j++)
 		{
 			//5,4,0.4,0.25
-			float waterNoise = FractalBrownianMotion(FVector{ float(i),float(j),0 } / WaterNoiseScale , WaterOctaves, WaterFrequency);
+			float waterNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / WaterNoiseScale , WaterOctaves, WaterFrequency);
 			if (waterNoise > WaterNoiseValueLimit)
 			{
 				FHitResult Hit;
@@ -416,11 +403,6 @@ void ATerrainTile::CreateWaterMesh()
 		}	
 	}
 
-	//for (auto& vertex : WaterVertices)
-	//{
-	//	vertex.X *= 2;
-	//	vertex.Y *= 2;
-	//}
 
 	UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);
