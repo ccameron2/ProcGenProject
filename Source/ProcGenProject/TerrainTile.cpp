@@ -123,7 +123,9 @@ void ATerrainTile::GenerateTerrain()
 		//Scale the vertices
 		for (int i = 0; i < MCVertices.Num(); i++)
 		{
+			
 			MCVertices[i] *= Scale;
+			MCVertices[i] -= GetActorLocation();
 		}
 
 		Vertices = TArray<FVector>(MCVertices);
@@ -418,6 +420,10 @@ void ATerrainTile::CreateWaterMesh()
 		}	
 	}
 
+	for (auto& vertex : WaterVertices)
+	{
+		vertex -= GetActorLocation();
+	}
 
 	UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);
