@@ -136,8 +136,6 @@ public:
 
 	TArray<FVector3d> MCVertices;
 
-	UPROPERTY(VisibleAnywhere, Category = "Water")
-		UStaticMeshComponent* WaterMesh;
 
 	UPROPERTY()
 		TArray< FVector > WaterVertices;

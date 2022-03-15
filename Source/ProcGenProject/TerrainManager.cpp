@@ -3,12 +3,18 @@
 #include "TerrainManager.h"
 #include "Kismet\GameplayStatics.h"
 #include <math.h>
+#include "KismetProceduralMeshLibrary.h"
+#include "delaunator.hpp"
 
 // Sets default values
 ATerrainManager::ATerrainManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	WaterMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Water Mesh"));
+	WaterMesh->SetupAttachment(RootComponent);
+	WaterMesh->SetMaterial(0, WaterMeshMaterial);
 }
 
 // Called when the game starts or when spawned
@@ -69,7 +75,13 @@ void ATerrainManager::Tick(float DeltaTime)
 					tile->MeshCreated = true;
 					FTransform SpawnParams(tile->GetActorRotation(), tile->GetActorLocation());
 					tile->FinishSpawning(SpawnParams);
+					UpdateWater = true;
 				}
+			}
+			if (UpdateWater)
+			{
+				CreateWaterMesh();
+				UpdateWater = false;
 			}
 		}
 	}
@@ -89,7 +101,7 @@ void ATerrainManager::Tick(float DeltaTime)
 			auto Distance = (PlayerLocation - TileLocation).Size();
 			auto MaxDistance = (((RenderDistance + 1) * ChunkSize));
 
-			if (Distance > MaxDistance)
+			if (Distance >= MaxDistance)
 			{
 				TileArray[i]->RemoveTrees();
 				TileArray[i]->RemoveRocks();
@@ -98,8 +110,6 @@ void ATerrainManager::Tick(float DeltaTime)
 			}
 		}
 	}
-
-	
 
 	if (PlayerGridPosition != LastPlayerPosition)
 	{
@@ -142,4 +152,98 @@ void ATerrainManager::CreateTileArray()
 			}
 		}
 	}
+}
+
+void ATerrainManager::CreateWaterMesh()
+{
+	FVector PlayerPosition = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+	WaterMesh->ClearMeshSection(0);
+	WaterVertices.Empty();
+	WaterTriangles.Empty();
+	WaterNormals.Empty();
+	for (int i = -(RenderDistance * ChunkSize); i < (RenderDistance * ChunkSize); i++)
+	{
+		for (int j = -(RenderDistance * ChunkSize); j < (RenderDistance * ChunkSize); j++)
+		{
+			//5,4,0.4,0.25
+			float waterNoise = ATerrainTile::FractalBrownianMotion(FVector{ PlayerPosition.X + float(i),PlayerPosition.Y + float(j),0 } / WaterNoiseScale, WaterOctaves, WaterFrequency);
+			if (waterNoise > WaterNoiseValueLimit)
+			{
+				FHitResult Hit;
+				FVector Start = { float((PlayerPosition.X) + (i * Scale)),float((PlayerPosition.Y) + (j * Scale)), float(ChunkHeight * Scale) };
+				FVector End = { float((PlayerPosition.X) + (i * Scale)),float((PlayerPosition.Y) + (j * Scale)), float(CaveLevel * Scale) };
+				ECollisionChannel Channel = ECC_Visibility;
+				FCollisionQueryParams Params;
+				GetWorld()->LineTraceSingleByChannel(Hit, Start, End, Channel, Params);
+				FVector Offset = FVector{ 0,0,float(Scale * 1) };
+				FVector Location = Hit.Location + Offset;
+				if (Hit.Location != FVector{ 0, 0, 0 })
+				{
+					if (Hit.Location != Offset)
+					{
+						if (Hit.Location.Z < (WaterLevel)*Scale)
+						{
+							if (Hit.Location.Z < (WaterLevel - 20) * Scale)
+							{
+								Location.Z = (WaterLevel - 20) * Scale;
+							}
+							WaterVertices.Push(Location);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	std::vector<double> coords;
+
+	bool inARowX = true;
+	bool inARowY = true;
+	float lastXVertex = 0;
+	float lastYVertex = 0;
+
+	for (auto& vertex : WaterVertices)
+	{
+		if (lastXVertex != 0)
+		{
+			if (vertex.X != lastXVertex)
+			{
+
+				inARowX = false;
+			}
+			if (vertex.Y != lastYVertex)
+			{
+				inARowY = false;
+			}
+		}
+		coords.push_back(vertex.X);
+		coords.push_back(vertex.Y);
+		lastXVertex = vertex.X;
+		lastYVertex = vertex.Y;
+	}
+
+	if (coords.size() > 6)
+	{
+		if (!inARowX && !inARowY)
+		{
+			//triangulation happens here
+			delaunator::Delaunator d(coords);
+
+			for (auto& triangle : d.triangles)
+			{
+				WaterTriangles.Push(triangle);
+			}
+		}
+	}
+
+	//for (auto& vertex : WaterVertices)
+	//{
+	//	vertex -= GetActorLocation();
+	//}
+
+	/*UKismetProceduralMeshLibrary* kismet;
+	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);*/
+
+	WaterMesh->CreateMeshSection(0, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
+	WaterMesh->SetMaterial(0, WaterMeshMaterial);
 }

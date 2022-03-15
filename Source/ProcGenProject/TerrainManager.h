@@ -4,6 +4,7 @@
 
 #include "TerrainTile.h"
 #include "TerrainWorker.h"
+#include "ProceduralMeshComponent.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TerrainManager.generated.h"
@@ -95,6 +96,33 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Water")
 		float WaterNoiseValueLimit = 0.25;
 
+	UPROPERTY(EditAnywhere, Category = "Water")
+		UMaterialInterface* WaterMeshMaterial;
+
+	UPROPERTY(VisibleAnywhere, Category = "Water")
+		UProceduralMeshComponent* WaterMesh;
+
+	void CreateWaterMesh();
+	bool UpdateWater = false;
+
+	UPROPERTY()
+		TArray< FVector > WaterVertices;
+
+	UPROPERTY()
+		TArray< int32 > WaterTriangles;
+
+	UPROPERTY()
+		TArray< FVector > WaterNormals;
+
+	UPROPERTY()
+		TArray< FVector2D > WaterUV0;
+
+	UPROPERTY()
+		TArray< FColor > WaterVertexColour;
+
+	UPROPERTY()
+		TArray <FProcMeshTangent> WaterTangents;
+
 	UPROPERTY(EditAnywhere, Category = "Rocks")
 		float RockNoiseScale = 5;
 
@@ -106,7 +134,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Rocks")
 		float RockNoiseValueLimit = 0.25;
-
 
 	void CreateTileArray();
 	FVector2D GetPlayerGridPosition();

@@ -1,8 +1,7 @@
 // Fill out your copyright notice in the DescrSiption page of Project Settings.
 #include "TerrainTile.h"
+#include <vector>
 #include "KismetProceduralMeshLibrary.h"
-
-#include "delaunator.hpp"
 
 int ATerrainTile::CubeSize = 0;
 float ATerrainTile::Seed = 0;
@@ -30,10 +29,6 @@ ATerrainTile::ATerrainTile()
 
 /*	RuntimeMesh = CreateDefaultSubobject<URuntimeMeshComponentStatic>(TEXT("Runtime Mesh"));
 	SetRootComponent(RuntimeMesh)*/;
-
-	WaterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Water Mesh"));
-	WaterMesh->SetupAttachment(RootComponent);
-	WaterMesh->SetRelativeLocation(FVector{ 0,0,float((SurfaceLevel * Scale) - (10 * Scale)) });
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
@@ -142,7 +137,7 @@ void ATerrainTile::CreateProcMesh()
 	/*RuntimeMesh->SetupMaterialSlot(0, TEXT("TerrainMat"), Material);
 	RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
 	CreateTrees();
-	CreateWaterMesh();
+	//CreateWaterMesh();
 	CreateRocks();
 }
 
@@ -406,19 +401,19 @@ void ATerrainTile::CreateWaterMesh()
 		lastYVertex = vertex.Y;
 	}
 
-	if (coords.size() > 6)
-	{
-		if (!inARowX && !inARowY)
-		{
-			//triangulation happens here
-			delaunator::Delaunator d(coords);
+	//if (coords.size() > 6)
+	//{
+	//	if (!inARowX && !inARowY)
+	//	{
+	//		//triangulation happens here
+	//		delaunator::Delaunator d(coords);
 
-			for (auto& triangle : d.triangles)
-			{
-				WaterTriangles.Push(triangle);
-			}
-		}	
-	}
+	//		for (auto& triangle : d.triangles)
+	//		{
+	//			WaterTriangles.Push(triangle);
+	//		}
+	//	}	
+	//}
 
 	for (auto& vertex : WaterVertices)
 	{
