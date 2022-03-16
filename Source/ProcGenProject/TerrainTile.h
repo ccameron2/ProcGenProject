@@ -10,6 +10,7 @@
 //#include "Components/RuntimeMeshComponentStatic.h"
 #include "Tree.h"
 #include "Rock.h"
+#include "Grass.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -40,10 +41,14 @@ public:
 
 	void RemoveTrees();
 
+	void CreateGrass();
+
+	void RemoveGrass();
+
 	void Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 				float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 					float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency,
-						float rockNoiseValueLimit, int waterLevel);
+						float rockNoiseValueLimit, int waterLevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit);
 
 	void GenerateTerrain();
 
@@ -83,6 +88,11 @@ public:
 	int	  RockOctaves;
 	float RockFrequency;
 	float RockNoiseValueLimit;
+
+	float GrassNoiseScale;
+	int   GrassOctaves;
+	float GrassFrequency;
+	float GrassNoiseValueLimit;
 
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
@@ -163,11 +173,20 @@ public:
 
 	TArray<ATree*> TreeList;
 
-	UPROPERTY(EditAnywhere, Category = "Trees")
+	UPROPERTY(EditAnywhere, Category = "Rocks")
 		TSubclassOf<class ARock> RockClass;
 
-	UPROPERTY(EditAnywhere, Category = "Trees")
+	UPROPERTY(EditAnywhere, Category = "Rocks")
 		TArray<UStaticMesh*> RockMeshList;
 
 	TArray<ARock*> RockList;
+
+	UPROPERTY(EditAnywhere, Category = "Grass")
+		TSubclassOf<class AGrass> GrassClass;
+
+	UPROPERTY(EditAnywhere, Category = "Grass")
+		TArray<UStaticMesh*> GrassMeshList;
+
+	TArray<AGrass*> GrassList;
+
 };

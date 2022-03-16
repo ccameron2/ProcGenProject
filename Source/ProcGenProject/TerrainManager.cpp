@@ -105,10 +105,11 @@ void ATerrainManager::Tick(float DeltaTime)
 			auto Distance = (PlayerLocation - TileLocation).Size();
 			auto MaxDistance = (((RenderDistance + 1) * ChunkSize));
 
-			if (Distance >= MaxDistance)
+			if (Distance >= MaxDistance + 1)
 			{
 				TileArray[i]->RemoveTrees();
 				TileArray[i]->RemoveRocks();
+				TileArray[i]->RemoveGrass();
 				TileArray[i]->Destroy();
 				TileArray.RemoveAt(i);
 			}
@@ -149,7 +150,8 @@ void ATerrainManager::CreateTileArray()
 
 				tile->Init(CubeSize, Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
 					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves, CaveNoiseScale, TreeNoiseScale,
-					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, RockNoiseScale, RockOctaves, RockFrequency, RockNoiseValueLimit, WaterLevel);
+					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, RockNoiseScale, RockOctaves, RockFrequency, RockNoiseValueLimit,
+					WaterLevel, GrassNoiseScale, GrassOctaves, GrassFrequency, GrassNoiseValueLimit);
 
 				TileArray.Push(tile);
 			}
@@ -247,7 +249,7 @@ void ATerrainManager::CreateWaterMesh()
 	/*UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);*/
 
-	WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
+	/*WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());*/
 
 	//// Map of vertex to triangles in Triangles array
 	//TArray<TArray<int32>> VertToTriMap;
@@ -270,7 +272,7 @@ void ATerrainManager::CreateWaterMesh()
 
 	//convert to findex3i to reuse normals code
 
-	TArray<FIndex3i> triangleIndexes;
+	/*TArray<FIndex3i> triangleIndexes;
 	triangleIndexes.Init(FIndex3i{ 0,0,0 }, WaterTriangles.Num() / 3);
 	
 	int triIndex = 0;
@@ -280,7 +282,7 @@ void ATerrainManager::CreateWaterMesh()
 		triangleIndexes[triIndex].B = WaterTriangles[i+1];
 		triangleIndexes[triIndex].C = WaterTriangles[i+2];
 		triIndex++;
-	}
+	}*/
 
 	//	if (i >= WaterVertices.Num() - 3) break;
 

@@ -108,6 +108,18 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Water")
 		UStaticMeshComponent* WaterStaticMesh;
 
+	UPROPERTY(EditAnywhere, Category = "Grass")
+		float GrassNoiseScale = 5;
+
+	UPROPERTY(EditAnywhere, Category = "Grass")
+		int GrassOctaves = 4;
+	
+	UPROPERTY(EditAnywhere, Category = "Grass")
+		float GrassFrequency = 0.2;
+
+	UPROPERTY(EditAnywhere, Category = "Grass")
+		float GrassNoiseValueLimit = 0.2;
+
 
 	void CreateWaterMesh();
 	bool UpdateWater = false;

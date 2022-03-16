@@ -55,7 +55,7 @@ void ATerrainTile::BeginPlay()
 void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 							float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 								float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, 
-									float rockNoiseValueLimit, int waterlevel)
+									float rockNoiseValueLimit, int waterlevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit)
 {
 	CubeSize = cubeSize;
 	Seed = seed;
@@ -82,6 +82,11 @@ void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int 
 	RockFrequency = rockFrequency;
 	RockNoiseValueLimit = rockNoiseValueLimit;
 	WaterLevel = waterlevel;
+	GrassNoiseScale = grassNoiseScale;
+	GrassOctaves = grassOctaves;
+	GrassFrequency = grassFrequency;
+	GrassNoiseValueLimit = grassNoiseValueLimit;
+
 }
 
 void ATerrainTile::GenerateTerrain()
@@ -205,6 +210,7 @@ void ATerrainTile::CreateProcMesh()
 	StaticMesh->SetMaterial(0,Material);
 	CreateTrees();
 	CreateRocks();
+	CreateGrass();
 }
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
@@ -386,6 +392,46 @@ void ATerrainTile::CreateTrees()
 	}
 }
 
+
+void ATerrainTile::CreateGrass()
+{
+	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i += 8)
+	{
+		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j += 8)
+		{
+			float grassNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / GrassNoiseScale, GrassOctaves, GrassFrequency);
+			if (grassNoise > GrassNoiseValueLimit)
+			{
+				FHitResult Hit;
+				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
+				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(CaveLevel * Scale) };
+				ECollisionChannel Channel = ECC_Visibility;
+				FCollisionQueryParams Params;
+				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
+				FVector Location = Hit.Location + FVector{ 0,0,float(Scale / 2) };
+				if (Hit.Location != FVector{ 0, 0, 0 })
+				{
+					if (Hit.Location.Z > (WaterLevel)*Scale)
+					{
+						FRotator Rotation = { 0,float(FMath::Rand()),0 };
+						FActorSpawnParameters SpawnParams;
+						//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
+						AGrass* grass = GetWorld()->SpawnActor<AGrass>(GrassClass, Location, Rotation, SpawnParams);
+						if (grass != nullptr)
+						{
+							grass->SetOwner(this);
+							grass->SetActorScale3D(FVector{ float(Scale / 30), float(Scale / 30), float(Scale / 30) });
+							grass->GrassMesh->SetStaticMesh(GrassMeshList[FMath::RandRange(0, GrassMeshList.Num() - 1)]);
+							GrassList.Push(grass);
+						}
+					}
+				}
+
+			}
+		}
+	}
+}
+
 void ATerrainTile::RemoveTrees()
 {
 	for (auto& tree : TreeList)
@@ -403,14 +449,22 @@ void ATerrainTile::RemoveRocks()
 	}
 }
 
+void ATerrainTile::RemoveGrass()
+{
+	for (auto& grass : GrassList)
+	{
+		grass->Destroy();
+	}
+}
+
 void ATerrainTile::CreateRocks()
 {
 	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i += 8)
 	{
 		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j += 8)
 		{
-			float treeNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / RockNoiseScale, RockOctaves, RockFrequency);
-			if (treeNoise > RockNoiseValueLimit)
+			float rockNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / RockNoiseScale, RockOctaves, RockFrequency);
+			if (rockNoise > RockNoiseValueLimit)
 			{
 				FHitResult Hit;
 				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
