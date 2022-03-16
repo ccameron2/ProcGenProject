@@ -40,13 +40,10 @@ public:
 
 	void RemoveTrees();
 
-	void CreateWaterMesh();
-
-	void Init(
-		int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
-			float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
-				float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
-					float waterFrequency, float waterNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, float rockNoiseValueLimit);
+	void Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+				float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
+					float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency,
+						float rockNoiseValueLimit, int waterLevel);
 
 	void GenerateTerrain();
 

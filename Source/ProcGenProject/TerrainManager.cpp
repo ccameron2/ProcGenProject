@@ -144,9 +144,8 @@ void ATerrainManager::CreateTileArray()
 				ATerrainTile* tile = GetWorld()->SpawnActorDeferred<ATerrainTile>(TerrainClass, SpawnParams);
 
 				tile->Init(CubeSize, Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
-						SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves,CaveNoiseScale, TreeNoiseScale,
-						TreeOctaves, TreeFrequency, TreeNoiseValueLimit, WaterLevel, WaterNoiseScale, WaterOctaves, WaterFrequency, 
-						WaterNoiseValueLimit, RockNoiseScale,RockOctaves ,RockFrequency,RockNoiseValueLimit);
+					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves, CaveNoiseScale, TreeNoiseScale,
+					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, RockNoiseScale, RockOctaves, RockFrequency, RockNoiseValueLimit, WaterLevel);
 
 				TileArray.Push(tile);
 			}
@@ -161,12 +160,12 @@ void ATerrainManager::CreateWaterMesh()
 	WaterVertices.Empty();
 	WaterTriangles.Empty();
 	WaterNormals.Empty();
-	for (int i = -(RenderDistance * ChunkSize); i < (RenderDistance * ChunkSize); i++)
+	for (int i = -((RenderDistance + 1) * ChunkSize); i < ((RenderDistance + 1) * ChunkSize); i+=WaterStepSize)
 	{
-		for (int j = -(RenderDistance * ChunkSize); j < (RenderDistance * ChunkSize); j++)
+		for (int j = -((RenderDistance +1) * ChunkSize); j < ((RenderDistance + 1) * ChunkSize); j+=WaterStepSize)
 		{
 			//5,4,0.4,0.25
-			float waterNoise = ATerrainTile::FractalBrownianMotion(FVector{ PlayerPosition.X + float(i),PlayerPosition.Y + float(j),0 } / WaterNoiseScale, WaterOctaves, WaterFrequency);
+			float waterNoise = ATerrainTile::FractalBrownianMotion(FVector{ PlayerPosition.X + float(i), PlayerPosition.Y + float(j), 0 } / WaterNoiseScale, WaterOctaves, WaterFrequency);
 			if (waterNoise > WaterNoiseValueLimit)
 			{
 				FHitResult Hit;
@@ -243,6 +242,72 @@ void ATerrainManager::CreateWaterMesh()
 
 	/*UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);*/
+
+	//WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
+
+	//// Map of vertex to triangles in Triangles array
+	//TArray<TArray<int32>> VertToTriMap;
+	//VertToTriMap.Init(TArray<int32>{ int32{ -1 }, int32{ -1 }, int32{ -1 },
+	//	int32{ -1 }, int32{ -1 }, int32{ -1 },
+	//	int32{ -1 }, int32{ -1 } }, WaterVertices.Num());
+
+	//// For each triangle for each vertex add triangle to vertex array entry
+	//for (int i = 0; i < WaterTriangles.Num(); i++)
+	//{
+	//	for (int j = 0; j < 8; j++)
+	//	{
+	//		if (VertToTriMap[WaterTriangles[i]][j] < 0)
+	//		{
+	//			VertToTriMap[WaterTriangles[i]][j] = i / 3;
+	//			break;
+	//		}
+	//	}
+	//}
+
+	////convert to findex3i to reuse normals code
+
+	//TArray<FIndex3i> triangleIndexes;
+	//triangleIndexes.Init(FIndex3i{ 0,0,0 }, WaterTriangles.Num() / 3);
+	//
+	//int triIndex = 0;
+	//for (int i = 0; i < WaterTriangles.Num() / 3; i+=3)
+	//{
+	//	triangleIndexes[triIndex].A = WaterTriangles[i];
+	//	triangleIndexes[triIndex].B = WaterTriangles[i+1];
+	//	triangleIndexes[triIndex].C = WaterTriangles[i+2];
+	//	triIndex++;
+	//}
+
+	////	if (i >= WaterVertices.Num() - 3) break;
+
+
+	////For each vertex collect the triangles that share it and calculate the face normal
+	//for (int i = 0; i < WaterVertices.Num(); i++)
+	//{
+	//	for (auto& triangle : VertToTriMap[i])
+	//	{
+	//		//This shouldnt happen
+	//		if (triangle < 0)
+	//		{
+	//			continue;
+	//		}
+	//		auto A = WaterVertices[triangleIndexes[triangle].A];
+	//		auto B = WaterVertices[triangleIndexes[triangle].B];
+	//		auto C = WaterVertices[triangleIndexes[triangle].C];
+	//		auto E1 = A - B;
+	//		auto E2 = C - B;
+	//		auto Normal = E1 ^ E2;
+	//		Normal.Normalize();
+	//		WaterNormals[i] += Normal;
+	//	}
+	//}
+
+	////Average the face normals
+	//for (auto& normal : WaterNormals)
+	//{
+	//	normal.Normalize();
+	//}
+
 
 	WaterMesh->CreateMeshSection(0, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
 	WaterMesh->SetMaterial(0, WaterMeshMaterial);

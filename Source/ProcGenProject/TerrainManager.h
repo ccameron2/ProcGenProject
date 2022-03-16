@@ -97,6 +97,9 @@ public:
 		float WaterNoiseValueLimit = 0.25;
 
 	UPROPERTY(EditAnywhere, Category = "Water")
+		float WaterStepSize = 8;
+
+	UPROPERTY(EditAnywhere, Category = "Water")
 		UMaterialInterface* WaterMeshMaterial;
 
 	UPROPERTY(VisibleAnywhere, Category = "Water")

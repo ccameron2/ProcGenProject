@@ -45,11 +45,10 @@ void ATerrainTile::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ATerrainTile::Init(
-	int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
-		float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
-			float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, int waterLevel, float waterNoiseScale, int waterOctaves,
-				float waterFrequency, float waterNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, float rockNoiseValueLimit)
+void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
+							float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
+								float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, 
+									float rockNoiseValueLimit, int waterlevel)
 {
 	CubeSize = cubeSize;
 	Seed = seed;
@@ -69,18 +68,13 @@ void ATerrainTile::Init(
 	TreeNoiseScale = treeNoiseScale;
 	TreeOctaves = treeOctaves;
 	TreeFrequency = treeFrequency;
-	WaterLevel = waterLevel;
 	TreeNoiseValueLimit = treeNoiseValueLimit;
 	GenerateCaves = generateCaves;
-	WaterNoiseScale = waterNoiseScale;
-	WaterOctaves = waterOctaves;
-	WaterFrequency = waterFrequency;
-	WaterNoiseValueLimit = waterNoiseValueLimit;
 	RockNoiseScale = rockNoiseScale;
 	RockOctaves = rockOctaves;
 	RockFrequency = rockFrequency;
 	RockNoiseValueLimit = rockNoiseValueLimit;
-
+	WaterLevel = waterlevel;
 }
 
 void ATerrainTile::GenerateTerrain()
@@ -137,7 +131,6 @@ void ATerrainTile::CreateProcMesh()
 	/*RuntimeMesh->SetupMaterialSlot(0, TEXT("TerrainMat"), Material);
 	RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
 	CreateTrees();
-	//CreateWaterMesh();
 	CreateRocks();
 }
 
@@ -335,96 +328,6 @@ void ATerrainTile::RemoveRocks()
 	{
 		rock->Destroy();
 	}
-}
-
-void ATerrainTile::CreateWaterMesh()
-{
-
-	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i++)
-	{
-		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j++)
-		{
-			//5,4,0.4,0.25
-			float waterNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / WaterNoiseScale , WaterOctaves, WaterFrequency);
-			if (waterNoise > WaterNoiseValueLimit)
-			{
-				FHitResult Hit;
-				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
-				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(CaveLevel * Scale) };
-				ECollisionChannel Channel = ECC_Visibility;
-				FCollisionQueryParams Params;
-				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
-				FVector Offset = FVector{ 0,0,float(Scale * 1) };
-				FVector Location = Hit.Location + Offset;
-				if (Hit.Location != FVector{ 0, 0, 0 })
-				{
-					if (Hit.Location != Offset)
-					{
-						if (Hit.Location.Z < (WaterLevel) * Scale)
-						{
-							if (Hit.Location.Z < (WaterLevel - 20) * Scale)
-							{
-								Location.Z = (WaterLevel - 20) * Scale;
-							}
-							WaterVertices.Push(Location);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	std::vector<double> coords;
-
-	bool inARowX = true;
-	bool inARowY = true;
-	float lastXVertex = 0;
-	float lastYVertex = 0;
-
-	for (auto& vertex : WaterVertices)
-	{
-		if (lastXVertex != 0)
-		{
-			if (vertex.X != lastXVertex)
-			{
-
-				inARowX = false;
-			}
-			if (vertex.Y != lastYVertex)
-			{
-				inARowY = false;
-			}
-		}		
-		coords.push_back(vertex.X);
-		coords.push_back(vertex.Y);
-		lastXVertex = vertex.X;
-		lastYVertex = vertex.Y;
-	}
-
-	//if (coords.size() > 6)
-	//{
-	//	if (!inARowX && !inARowY)
-	//	{
-	//		//triangulation happens here
-	//		delaunator::Delaunator d(coords);
-
-	//		for (auto& triangle : d.triangles)
-	//		{
-	//			WaterTriangles.Push(triangle);
-	//		}
-	//	}	
-	//}
-
-	for (auto& vertex : WaterVertices)
-	{
-		vertex -= GetActorLocation();
-	}
-
-	UKismetProceduralMeshLibrary* kismet;
-	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);
-
-	ProcMesh->CreateMeshSection(1, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
-	ProcMesh->SetMaterial(1, WaterMeshMaterial);
 }
 
 void ATerrainTile::CreateRocks()
