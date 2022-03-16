@@ -105,6 +105,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Water")
 		UProceduralMeshComponent* WaterMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "Water")
+		UStaticMeshComponent* WaterStaticMesh;
+
+
 	void CreateWaterMesh();
 	bool UpdateWater = false;
 

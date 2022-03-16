@@ -6,6 +6,10 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "delaunator.hpp"
 
+#include "MeshDescription.h"
+#include "MeshDescriptionBuilder.h"
+#include "StaticMeshAttributes.h"
+
 // Sets default values
 ATerrainManager::ATerrainManager()
 {
@@ -243,7 +247,7 @@ void ATerrainManager::CreateWaterMesh()
 	/*UKismetProceduralMeshLibrary* kismet;
 	kismet->CalculateTangentsForMesh(WaterVertices, WaterTriangles, WaterUV0, WaterNormals, WaterTangents);*/
 
-	//WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
+	WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
 
 	//// Map of vertex to triangles in Triangles array
 	//TArray<TArray<int32>> VertToTriMap;
@@ -264,24 +268,24 @@ void ATerrainManager::CreateWaterMesh()
 	//	}
 	//}
 
-	////convert to findex3i to reuse normals code
+	//convert to findex3i to reuse normals code
 
-	//TArray<FIndex3i> triangleIndexes;
-	//triangleIndexes.Init(FIndex3i{ 0,0,0 }, WaterTriangles.Num() / 3);
-	//
-	//int triIndex = 0;
-	//for (int i = 0; i < WaterTriangles.Num() / 3; i+=3)
-	//{
-	//	triangleIndexes[triIndex].A = WaterTriangles[i];
-	//	triangleIndexes[triIndex].B = WaterTriangles[i+1];
-	//	triangleIndexes[triIndex].C = WaterTriangles[i+2];
-	//	triIndex++;
-	//}
+	TArray<FIndex3i> triangleIndexes;
+	triangleIndexes.Init(FIndex3i{ 0,0,0 }, WaterTriangles.Num() / 3);
+	
+	int triIndex = 0;
+	for (int i = 0; i < WaterTriangles.Num() / 3; i+=3)
+	{
+		triangleIndexes[triIndex].A = WaterTriangles[i];
+		triangleIndexes[triIndex].B = WaterTriangles[i+1];
+		triangleIndexes[triIndex].C = WaterTriangles[i+2];
+		triIndex++;
+	}
 
-	////	if (i >= WaterVertices.Num() - 3) break;
+	//	if (i >= WaterVertices.Num() - 3) break;
 
 
-	////For each vertex collect the triangles that share it and calculate the face normal
+	//For each vertex collect the triangles that share it and calculate the face normal
 	//for (int i = 0; i < WaterVertices.Num(); i++)
 	//{
 	//	for (auto& triangle : VertToTriMap[i])
@@ -307,6 +311,73 @@ void ATerrainManager::CreateWaterMesh()
 	//{
 	//	normal.Normalize();
 	//}
+
+
+	//FMeshDescription meshDesc;
+	//FStaticMeshAttributes Attributes(meshDesc);
+	//Attributes.Register();
+
+	//FMeshDescriptionBuilder meshDescBuilder;
+	//meshDescBuilder.SetMeshDescription(&meshDesc);
+	//meshDescBuilder.EnablePolyGroups();
+	//meshDescBuilder.SetNumUVLayers(1);
+
+
+	//TArray< FVertexID > vertexIDs;
+	//vertexIDs.Init(FVertexID(0), WaterVertices.Num());
+
+	//for (int i = 0; i < WaterVertices.Num(); i++)
+	//{
+	//	vertexIDs[i] = meshDescBuilder.AppendVertex(WaterVertices[i]);
+	//}
+
+	//TArray< FVertexInstanceID > vertexInstances;
+
+	//WaterVertexColour.Init(FVector4{ 1,1,1,1 }, WaterVertices.Num());
+	//WaterUV0.Init(FVector2D{ 0,0 }, WaterVertices.Num());
+	//for (auto& triangle : triangleIndexes)
+	//{
+	//	FVertexInstanceID instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.A]);
+	//	meshDescBuilder.SetInstanceNormal(instance, WaterNormals[triangle.A]);
+	//	meshDescBuilder.SetInstanceUV(instance, WaterUV0[triangle.A]);
+	//	meshDescBuilder.SetInstanceColor(instance, WaterVertexColour[triangle.A]);
+	//	vertexInstances.Add(instance);
+
+	//	instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.B]);
+	//	meshDescBuilder.SetInstanceNormal(instance, WaterNormals[triangle.B]);
+	//	meshDescBuilder.SetInstanceUV(instance, WaterUV0[triangle.B]);
+	//	meshDescBuilder.SetInstanceColor(instance, WaterVertexColour[triangle.B]);
+	//	vertexInstances.Add(instance);
+
+	//	instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.C]);
+	//	meshDescBuilder.SetInstanceNormal(instance, WaterNormals[triangle.C]);
+	//	meshDescBuilder.SetInstanceUV(instance, WaterUV0[triangle.C]);
+	//	meshDescBuilder.SetInstanceColor(instance, WaterVertexColour[triangle.C]);
+	//	vertexInstances.Add(instance);
+	//}
+
+	//// Allocate a polygon group
+	//FPolygonGroupID polygonGroup = meshDescBuilder.AppendPolygonGroup();
+
+	//for (int i = 0; i < vertexInstances.Num() / 3; i++)
+	//{
+	//	meshDescBuilder.AppendTriangle(vertexInstances[(i * 3)], vertexInstances[(i * 3) + 1], vertexInstances[i * 3 + 2], polygonGroup);
+	//}
+
+	//UStaticMesh* staticMesh = NewObject<UStaticMesh>(this);
+	//staticMesh->GetStaticMaterials().Add(FStaticMaterial());
+
+	//UStaticMesh::FBuildMeshDescriptionsParams mdParams;
+	//mdParams.bBuildSimpleCollision = true;
+
+
+	//// Build static mesh
+	//TArray<const FMeshDescription*> meshDescPtrs;
+	//meshDescPtrs.Emplace(&meshDesc);
+	//staticMesh->BuildFromMeshDescriptions(meshDescPtrs, mdParams);
+
+	//WaterStaticMesh->SetStaticMesh(staticMesh);
+	//WaterStaticMesh->SetMaterial(0, WaterMeshMaterial);
 
 
 	WaterMesh->CreateMeshSection(0, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);

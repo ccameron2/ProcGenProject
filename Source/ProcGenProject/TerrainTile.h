@@ -93,6 +93,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UProceduralMeshComponent* ProcMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "StaticMesh")
+		UStaticMeshComponent* StaticMesh;
+
 	//UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 	//	URuntimeMeshComponentStatic* RuntimeMesh;
 
@@ -121,7 +124,7 @@ public:
 		TArray< FVector2D > UV0;
 
 	UPROPERTY()
-		TArray< FColor > VertexColour;
+		TArray< FVector4 > VertexColour;
 
 	UPROPERTY()
 		TArray <FProcMeshTangent> Tangents;
