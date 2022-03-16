@@ -41,8 +41,8 @@ ATerrainTile::ATerrainTile()
 	Material = TerrainMaterial.Object;
 	StaticMesh->SetMaterial(0, Material);
 
-	//static ConstructorHelpers::FObjectFinder<UMaterial> WaterMaterial(TEXT("Material'/Game/M_Water_Mesh'"));
-	//WaterMeshMaterial = WaterMaterial.Object;
+	static ConstructorHelpers::FObjectFinder<UMaterial> WaterMaterial(TEXT("Material'/Game/M_Water_Mesh'"));
+	WaterMeshMaterial = WaterMaterial.Object;
 
 }
 
@@ -431,8 +431,7 @@ void ATerrainTile::CreateGrass()
 						FRotator Rotation = { 0,float(FMath::Rand()),0 };
 						FActorSpawnParameters SpawnParams;
 						//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
-						Location = { Location.X,Location.Y,float((WaterLevel + 0.5) * Scale) };
-						AGrass* grass = GetWorld()->SpawnActor<AGrass>(GrassClass, Location, Rotation, SpawnParams);
+						AGrass* grass = GetWorld()->SpawnActor<AGrass>(GrassClass, Location + FVector{0,0,float(WaterLevel)}, Rotation, SpawnParams);
 						if (grass != nullptr)
 						{
 							grass->SetOwner(this);

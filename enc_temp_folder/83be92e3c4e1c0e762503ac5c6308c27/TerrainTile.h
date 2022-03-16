@@ -94,11 +94,14 @@ public:
 	float GrassFrequency;
 	float GrassNoiseValueLimit;
 
-	UPROPERTY(VisibleAnywhere, Category = "StaticMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		UMaterialInterface* Material;
 
-	//UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
-	//	UProceduralMeshComponent* ProcMesh;
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
+		UMaterialInterface* WaterMeshMaterial;
+
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
+		UProceduralMeshComponent* ProcMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "StaticMesh")
 		UStaticMeshComponent* StaticMesh;
@@ -106,13 +109,13 @@ public:
 	//UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 	//	URuntimeMeshComponentStatic* RuntimeMesh;
 
-	UPROPERTY(VisibleAnywhere, Category = "StaticMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		int GridSizeX = 256;
 
-	UPROPERTY(VisibleAnywhere, Category = "StaticMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		int GridSizeY = 256;
 
-	UPROPERTY(VisibleAnywhere, Category = "StaticMesh")
+	UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
 		int GridSizeZ = 1800;
 
 	UPROPERTY()
@@ -136,7 +139,7 @@ public:
 	UPROPERTY()
 		TArray <FProcMeshTangent> Tangents;
 
-	UPROPERTY(EditAnywhere, Category = "StaticMesh")
+	UPROPERTY(EditAnywhere, Category = "ProcMesh")
 		bool CreateCollision = true;
 
 	TArray<FIndex3i> MCTriangles;

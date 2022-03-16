@@ -188,9 +188,9 @@ void ATerrainManager::CreateWaterMesh()
 					{
 						if (Hit.Location.Z < (WaterLevel)*Scale)
 						{
-							if (Hit.Location.Z < (WaterLevel) * Scale)
+							if (Hit.Location.Z < (WaterLevel - 20) * Scale)
 							{
-								Location.Z = (WaterLevel) * Scale;
+								Location.Z = (WaterLevel - 20) * Scale;
 							}
 							WaterVertices.Push(Location);
 						}
