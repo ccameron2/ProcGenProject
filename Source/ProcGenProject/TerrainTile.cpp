@@ -28,8 +28,8 @@ ATerrainTile::ATerrainTile()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//Create Procedural mesh and attach to root component
-	/*ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
-	SetRootComponent(ProcMesh);*/
+	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
+	SetRootComponent(ProcMesh);
 
 /*	RuntimeMesh = CreateDefaultSubobject<URuntimeMeshComponentStatic>(TEXT("Runtime Mesh"));
 	SetRootComponent(RuntimeMesh)*/;
@@ -137,78 +137,86 @@ void ATerrainTile::GenerateTerrain()
 
 void ATerrainTile::CreateProcMesh()
 {
-	/*ProcMesh->ClearAllMeshSections();
-	ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, CreateCollision);*/
-	
-	/*RuntimeMesh->SetupMaterialSlot(0, TEXT("TerrainMat"), Material);
-	RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
-	
-	FMeshDescription meshDesc;
-	FStaticMeshAttributes Attributes(meshDesc);
-	Attributes.Register();
-
-	FMeshDescriptionBuilder meshDescBuilder;
-	meshDescBuilder.SetMeshDescription(&meshDesc);
-	meshDescBuilder.EnablePolyGroups();
-	meshDescBuilder.SetNumUVLayers(1);
-
-
-	TArray< FVertexID > vertexIDs;
-	vertexIDs.Init(FVertexID(0), Vertices.Num());
-
-	for (int i = 0; i < Vertices.Num(); i++)
+	if (UseStaticMesh)
 	{
-		vertexIDs[i] = meshDescBuilder.AppendVertex(Vertices[i]);
+		FMeshDescription meshDesc;
+		FStaticMeshAttributes Attributes(meshDesc);
+		Attributes.Register();
+
+		FMeshDescriptionBuilder meshDescBuilder;
+		meshDescBuilder.SetMeshDescription(&meshDesc);
+		meshDescBuilder.EnablePolyGroups();
+		meshDescBuilder.SetNumUVLayers(1);
+
+
+		TArray< FVertexID > vertexIDs;
+		vertexIDs.Init(FVertexID(0), Vertices.Num());
+
+		for (int i = 0; i < Vertices.Num(); i++)
+		{
+			vertexIDs[i] = meshDescBuilder.AppendVertex(Vertices[i]);
+		}
+
+		TArray< FVertexInstanceID > vertexInstances;
+
+		VertexColour.Init(FVector4{ 1,1,1,1 }, Vertices.Num());
+		UV0.Init(FVector2D{ 0,0 }, Vertices.Num());
+		for (auto& triangle : MCTriangles)
+		{
+			FVertexInstanceID instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.A]);
+			meshDescBuilder.SetInstanceNormal(instance, Normals[triangle.A]);
+			meshDescBuilder.SetInstanceUV(instance, UV0[triangle.A]);
+			meshDescBuilder.SetInstanceColor(instance, VertexColour[triangle.A]);
+			vertexInstances.Add(instance);
+
+			instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.B]);
+			meshDescBuilder.SetInstanceNormal(instance, Normals[triangle.B]);
+			meshDescBuilder.SetInstanceUV(instance, UV0[triangle.B]);
+			meshDescBuilder.SetInstanceColor(instance, VertexColour[triangle.B]);
+			vertexInstances.Add(instance);
+
+			instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.C]);
+			meshDescBuilder.SetInstanceNormal(instance, Normals[triangle.C]);
+			meshDescBuilder.SetInstanceUV(instance, UV0[triangle.C]);
+			meshDescBuilder.SetInstanceColor(instance, VertexColour[triangle.C]);
+			vertexInstances.Add(instance);
+		}
+
+		// Allocate a polygon group
+		FPolygonGroupID polygonGroup = meshDescBuilder.AppendPolygonGroup();
+		
+		for (int i = 0; i < vertexInstances.Num() / 3; i++)
+		{
+			meshDescBuilder.AppendTriangle(vertexInstances[(i * 3)], vertexInstances[(i * 3) + 1], vertexInstances[i * 3 + 2], polygonGroup);
+		}
+		
+		UStaticMesh* staticMesh = NewObject<UStaticMesh>(this);
+		staticMesh->GetStaticMaterials().Add(FStaticMaterial());
+
+		UStaticMesh::FBuildMeshDescriptionsParams mdParams;
+		mdParams.bBuildSimpleCollision = true;
+		mdParams.bAllowCpuAccess = true;
+
+
+		// Build static mesh
+		TArray<const FMeshDescription*> meshDescPtrs;
+		meshDescPtrs.Emplace(&meshDesc);
+		staticMesh->BuildFromMeshDescriptions(meshDescPtrs, mdParams);
+		staticMesh->bAllowCPUAccess = 1;
+
+		StaticMesh->SetStaticMesh(staticMesh);
+		StaticMesh->SetMaterial(0,Material);
 	}
-
-	TArray< FVertexInstanceID > vertexInstances;
-
-	VertexColour.Init(FVector4{ 1,1,1,1 }, Vertices.Num());
-	UV0.Init(FVector2D{ 0,0 }, Vertices.Num());
-	for (auto& triangle : MCTriangles)
+	else
 	{
-		FVertexInstanceID instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.A]);
-		meshDescBuilder.SetInstanceNormal(instance, Normals[triangle.A]);
-		meshDescBuilder.SetInstanceUV(instance, UV0[triangle.A]);
-		meshDescBuilder.SetInstanceColor(instance, VertexColour[triangle.A]);
-		vertexInstances.Add(instance);
-
-		instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.B]);
-		meshDescBuilder.SetInstanceNormal(instance, Normals[triangle.B]);
-		meshDescBuilder.SetInstanceUV(instance, UV0[triangle.B]);
-		meshDescBuilder.SetInstanceColor(instance, VertexColour[triangle.B]);
-		vertexInstances.Add(instance);
-
-		instance = meshDescBuilder.AppendInstance(vertexIDs[triangle.C]);
-		meshDescBuilder.SetInstanceNormal(instance, Normals[triangle.C]);
-		meshDescBuilder.SetInstanceUV(instance, UV0[triangle.C]);
-		meshDescBuilder.SetInstanceColor(instance, VertexColour[triangle.C]);
-		vertexInstances.Add(instance);
+		/*RuntimeMesh->SetupMaterialSlot(0, TEXT("TerrainMat"), Material);
+	    RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
+		
+		ProcMesh->ClearAllMeshSections();
+		ProcMesh->SetMaterial(0, Material);
+		ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, ProcVertexColour, Tangents, CreateCollision);
 	}
-
-	// Allocate a polygon group
-	FPolygonGroupID polygonGroup = meshDescBuilder.AppendPolygonGroup();
-	
-	for (int i = 0; i < vertexInstances.Num() / 3; i++)
-	{
-		meshDescBuilder.AppendTriangle(vertexInstances[(i * 3)], vertexInstances[(i * 3) + 1], vertexInstances[i * 3 + 2], polygonGroup);
-	}
-	
-	UStaticMesh* staticMesh = NewObject<UStaticMesh>(this);
-	staticMesh->GetStaticMaterials().Add(FStaticMaterial());
-
-	UStaticMesh::FBuildMeshDescriptionsParams mdParams;
-	mdParams.bBuildSimpleCollision = true;
-	mdParams.bAllowCpuAccess = true;
-
-
-	// Build static mesh
-	TArray<const FMeshDescription*> meshDescPtrs;
-	meshDescPtrs.Emplace(&meshDesc);
-	staticMesh->BuildFromMeshDescriptions(meshDescPtrs, mdParams);
-
-	StaticMesh->SetStaticMesh(staticMesh);
-	StaticMesh->SetMaterial(0,Material);
+		
 	CreateTrees();
 	CreateRocks();
 	CreateGrass();
