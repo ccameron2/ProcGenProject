@@ -11,6 +11,7 @@
 #include "Tree.h"
 #include "Rock.h"
 #include "Grass.h"
+#include "Animal.h"
 #include "TerrainTile.generated.h"
 
 UCLASS()
@@ -45,10 +46,15 @@ public:
 
 	void RemoveGrass();
 
+	void CreateAnimals();
+
+	void RemoveAnimals();
+
 	void Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 				float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 					float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency,
-						float rockNoiseValueLimit, int waterLevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit);
+						float rockNoiseValueLimit, int waterLevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit,
+							float animalNoiseScale, int animalOctaves, float animalFrequency, float animalNoiseValueLimit);
 
 	void GenerateTerrain();
 
@@ -93,6 +99,11 @@ public:
 	int   GrassOctaves;
 	float GrassFrequency;
 	float GrassNoiseValueLimit;
+
+	float AnimalNoiseScale;
+	int   AnimalOctaves;
+	float AnimalFrequency;
+	float AnimalNoiseValueLimit;
 
 	UPROPERTY(VisibleAnywhere, Category = "Mesh")
 		UMaterialInterface* Material;
@@ -191,5 +202,10 @@ public:
 		TArray<UStaticMesh*> GrassMeshList;
 
 	TArray<AGrass*> GrassList;
+
+	UPROPERTY(EditAnywhere, Category = "Animals")
+		TArray<TSubclassOf<AAnimal>> AnimalClassList;
+
+	TArray<AAnimal*> AnimalList;
 
 };

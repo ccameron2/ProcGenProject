@@ -110,6 +110,7 @@ void ATerrainManager::Tick(float DeltaTime)
 				TileArray[i]->RemoveTrees();
 				TileArray[i]->RemoveRocks();
 				TileArray[i]->RemoveGrass();
+				TileArray[i]->RemoveAnimals();
 				TileArray[i]->Destroy();
 				TileArray.RemoveAt(i);
 			}
@@ -151,7 +152,8 @@ void ATerrainManager::CreateTileArray()
 				tile->Init(CubeSize, Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
 					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves, CaveNoiseScale, TreeNoiseScale,
 					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, RockNoiseScale, RockOctaves, RockFrequency, RockNoiseValueLimit,
-					WaterLevel, GrassNoiseScale, GrassOctaves, GrassFrequency, GrassNoiseValueLimit);
+					WaterLevel, GrassNoiseScale, GrassOctaves, GrassFrequency, GrassNoiseValueLimit, AnimalNoiseScale, AnimalOctaves, 
+					AnimalFrequency, AnimalNoiseValueLimit);
 
 				TileArray.Push(tile);
 			}

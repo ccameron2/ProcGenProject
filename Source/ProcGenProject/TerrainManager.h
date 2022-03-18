@@ -21,104 +21,128 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Chunks")
 	TArray<ATerrainTile*> TileArray;
 
-	UPROPERTY(EditAnywhere, Category = "Chunks")
-		int CubeSize = 8;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
+		int CubeSize = 16;
 
-	UPROPERTY(EditAnywhere,Category = "Chunks")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int RenderDistance = 5;
 
-	UPROPERTY(EditAnywhere, Category = "Chunks")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int ChunkSize = 256;
 
-	UPROPERTY(EditAnywhere, Category = "Chunks")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chunks")
 		int ChunkHeight = 1800;
 
-	UPROPERTY(EditAnywhere, Category = "Chunks")
-		int Scale = 100;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Chunks")
+		int Scale = 200;
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		float Seed = 875694;			
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		int Octaves = 10;				
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		float SurfaceFrequency = 0.35;	
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		float CaveFrequency = 1;		
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		int NoiseScale = 50;			
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		int SurfaceLevel = 900;			
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
-		int CaveLevel = 700;			
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
+		int CaveLevel = 800;			
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		int OverallNoiseScale = 23;		
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		int SurfaceNoiseScale = 18;		
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		bool GenerateCaves = true;	
 
-	UPROPERTY(EditAnywhere, Category = "Terrain")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain")
 		int CaveNoiseScale = 6;
 
-	UPROPERTY(EditAnywhere, Category = "Trees")
-		int TreeNoiseScale = 5;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trees")
+		int TreeNoiseScale = 4;
 
-	UPROPERTY(EditAnywhere, Category = "Trees")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trees")
 		int TreeOctaves = 4;
 
-	UPROPERTY(EditAnywhere, Category = "Trees")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trees")
 		float TreeFrequency = 0.4;
 
-	UPROPERTY(EditAnywhere, Category = "Trees")
-		float TreeNoiseValueLimit = 0.25;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trees")
+		float TreeNoiseValueLimit = 0.3;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
-		float WaterLevel = 800;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		float WaterLevel = 900;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		float WaterNoiseScale = 5;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
-		int WaterOctaves = 4;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		int WaterOctaves = 1;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		float WaterFrequency = 0.4;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
-		float WaterNoiseValueLimit = 0.25;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+		float WaterNoiseValueLimit = -1;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		float WaterStepSize = 8;
 
-	UPROPERTY(EditAnywhere, Category = "Water")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 		UMaterialInterface* WaterMeshMaterial;
 
-	UPROPERTY(VisibleAnywhere, Category = "Water")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Water")
 		UProceduralMeshComponent* WaterMesh;
 
-	UPROPERTY(VisibleAnywhere, Category = "Water")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Water")
 		UStaticMeshComponent* WaterStaticMesh;
 
-	UPROPERTY(EditAnywhere, Category = "Grass")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grass")
 		float GrassNoiseScale = 5;
 
-	UPROPERTY(EditAnywhere, Category = "Grass")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grass")
 		int GrassOctaves = 4;
 	
-	UPROPERTY(EditAnywhere, Category = "Grass")
-		float GrassFrequency = 0.2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grass")
+		float GrassFrequency = 0.25;
 
-	UPROPERTY(EditAnywhere, Category = "Grass")
-		float GrassNoiseValueLimit = 0.2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grass")
+		float GrassNoiseValueLimit = 0.25;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		float RockNoiseScale = 5;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		int RockOctaves = 4;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		float RockFrequency = 0.32;
+
+	UPROPERTY(EditAnywhere, Category = "Rocks")
+		float RockNoiseValueLimit = 0.4;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animal")
+		float AnimalNoiseScale = 5;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animal")
+		int AnimalOctaves = 4;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animal")
+		float AnimalFrequency = 0.42;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animal")
+		float AnimalNoiseValueLimit = 0.4;
 
 
 	void CreateWaterMesh();
@@ -142,18 +166,7 @@ public:
 	UPROPERTY()
 		TArray <FProcMeshTangent> WaterTangents;
 
-	UPROPERTY(EditAnywhere, Category = "Rocks")
-		float RockNoiseScale = 5;
-
-	UPROPERTY(EditAnywhere, Category = "Rocks")
-		int RockOctaves = 4;
-
-	UPROPERTY(EditAnywhere, Category = "Rocks")
-		float RockFrequency = 0.4;
-
-	UPROPERTY(EditAnywhere, Category = "Rocks")
-		float RockNoiseValueLimit = 0.25;
-
+	
 	void CreateTileArray();
 	FVector2D GetPlayerGridPosition();
 	FVector2D GetTilePosition(int index);

@@ -35,7 +35,7 @@ ATerrainTile::ATerrainTile()
 	SetRootComponent(RuntimeMesh)*/;
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("smComp"), false);
-	SetRootComponent(StaticMesh);
+	StaticMesh->SetupAttachment(ProcMesh);
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
@@ -55,7 +55,8 @@ void ATerrainTile::BeginPlay()
 void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
 							float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
 								float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, 
-									float rockNoiseValueLimit, int waterlevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit)
+									float rockNoiseValueLimit, int waterlevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit,
+										float animalNoiseScale, int animalOctaves, float animalFrequency, float animalNoiseValueLimit)
 {
 	CubeSize = cubeSize;
 	Seed = seed;
@@ -86,7 +87,10 @@ void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int 
 	GrassOctaves = grassOctaves;
 	GrassFrequency = grassFrequency;
 	GrassNoiseValueLimit = grassNoiseValueLimit;
-
+	AnimalNoiseScale = animalNoiseScale;
+	AnimalOctaves = animalOctaves;
+	AnimalFrequency = animalFrequency;
+	AnimalNoiseValueLimit = animalNoiseValueLimit;
 }
 
 void ATerrainTile::GenerateTerrain()
@@ -220,6 +224,7 @@ void ATerrainTile::CreateProcMesh()
 	CreateTrees();
 	CreateRocks();
 	CreateGrass();
+	CreateAnimals();
 }
 
 double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
@@ -517,6 +522,53 @@ void ATerrainTile::CreateRocks()
 
 			}
 		}
+	}
+}
+
+void ATerrainTile::CreateAnimals()
+{
+	for (int i = -GridSizeX / 2; i < GridSizeX / 2; i += 8)
+	{
+		for (int j = -GridSizeY / 2; j < GridSizeY / 2; j += 8)
+		{
+			float animalNoise = FractalBrownianMotion(FVector{ GetActorLocation().X + float(i),GetActorLocation().Y + float(j),0 } / AnimalNoiseScale, AnimalOctaves, AnimalFrequency);
+			if (animalNoise > AnimalNoiseValueLimit)
+			{
+				FHitResult Hit;
+				FVector Start = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(GridSizeZ * Scale) };
+				FVector End = { float((GetActorLocation().X * Scale) + (i * Scale)),float((GetActorLocation().Y * Scale) + (j * Scale)), float(CaveLevel * Scale) };
+				ECollisionChannel Channel = ECC_Visibility;
+				FCollisionQueryParams Params;
+				ActorLineTraceSingle(Hit, Start, End, Channel, Params);
+				FVector Location = Hit.Location + FVector{ 0,0,float(Scale / 2) };
+				if (Hit.Location != FVector{ 0, 0, 0 })
+				{
+					if (Hit.Location.Z > (WaterLevel)*Scale)
+					{
+						FRotator Rotation = { 0,float(FMath::Rand()),0 };
+						FActorSpawnParameters SpawnParams;
+						//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
+						AAnimal* animal = GetWorld()->SpawnActor<AAnimal>(AnimalClassList[FMath::RandRange(0,AnimalClassList.Num()-1)],
+							(Location - FVector{0,0,float(-Scale)}), Rotation, SpawnParams);
+						if (animal != nullptr)
+						{
+							animal->SetOwner(this);
+							animal->SetActorScale3D(FVector{ float(Scale / 30), float(Scale / 30), float(Scale / 30) });
+							AnimalList.Push(animal);
+						}
+					}
+				}
+
+			}
+		}
+	}
+}
+
+void ATerrainTile::RemoveAnimals()
+{
+	for (auto& animal : AnimalList)
+	{
+		animal->Destroy();
 	}
 }
 
