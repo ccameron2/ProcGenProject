@@ -51,12 +51,10 @@ public:
 	void RemoveAnimals();
 
 	void Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
-			  float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
-			  float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, TSubclassOf<class ATree> treeClass, TArray<UStaticMesh*> treeMeshList,
-			  float rockNoiseScale, int rockOctaves, float rockFrequency, float rockNoiseValueLimit, TSubclassOf<class ARock> rockClass, TArray<UStaticMesh*> rockMeshList, 
-			  int waterLevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit, TSubclassOf<class AGrass> grassClass, 
-			  TArray<UStaticMesh*> grassMeshList, float animalNoiseScale, int animalOctaves, float animalFrequency, float animalNoiseValueLimit, TArray<TSubclassOf<AAnimal>> animalClassList,
-			  bool useStaticMesh);
+				float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
+					float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency,
+						float rockNoiseValueLimit, int waterLevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit,
+							float animalNoiseScale, int animalOctaves, float animalFrequency, float animalNoiseValueLimit, TArray<TSubclassOf<AAnimal>> animalClassList, bool useStaticMesh);
 
 	void GenerateTerrain();
 
@@ -155,7 +153,7 @@ public:
 	UPROPERTY()
 		TArray <FProcMeshTangent> Tangents;
 
-	UPROPERTY(VisibleAnywhere, Category = "Mesh")
+	UPROPERTY(EditAnywhere, Category = "Mesh")
 		bool CreateCollision = true;
 
 	TArray<FIndex3i> MCTriangles;
@@ -181,31 +179,31 @@ public:
 	UPROPERTY()
 		TArray <FProcMeshTangent> WaterTangents;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category = "Trees")
 		TSubclassOf<class ATree> TreeClass;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category = "Trees")
 	TArray<UStaticMesh*> TreeMeshList;
 
 	TArray<ATree*> TreeList;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category = "Rocks")
 		TSubclassOf<class ARock> RockClass;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category = "Rocks")
 		TArray<UStaticMesh*> RockMeshList;
 
 	TArray<ARock*> RockList;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category = "Grass")
 		TSubclassOf<class AGrass> GrassClass;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, Category = "Grass")
 		TArray<UStaticMesh*> GrassMeshList;
 
 	TArray<AGrass*> GrassList;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Animals")
 		TArray<TSubclassOf<AAnimal>> AnimalClassList;
 
 	TArray<AAnimal*> AnimalList;

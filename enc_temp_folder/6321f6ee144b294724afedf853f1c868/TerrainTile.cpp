@@ -53,12 +53,10 @@ void ATerrainTile::BeginPlay()
 }
 
 void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int chunkHeight, int octaves, float surfaceFrequency, float caveFrequency,
-						float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
-						float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, TSubclassOf<class ATree> treeClass, TArray<UStaticMesh*> treeMeshList,
-						float rockNoiseScale, int rockOctaves, float rockFrequency, float rockNoiseValueLimit, TSubclassOf<class ARock> rockClass, TArray<UStaticMesh*> rockMeshList,
-						int waterLevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit, TSubclassOf<class AGrass> grassClass,
-						TArray<UStaticMesh*> grassMeshList, float animalNoiseScale, int animalOctaves, float animalFrequency, float animalNoiseValueLimit, TArray<TSubclassOf<AAnimal>> animalClassList,
-						bool useStaticMesh)
+							float noiseScale, int surfaceLevel, int caveLevel, int overallNoiseScale, int surfaceNoiseScale, bool generateCaves, float caveNoiseScale,
+								float treeNoiseScale, int treeOctaves, float treeFrequency, float treeNoiseValueLimit, float rockNoiseScale, int rockOctaves, float rockFrequency, 
+									float rockNoiseValueLimit, int waterlevel, float grassNoiseScale, int grassOctaves, float grassFrequency, float grassNoiseValueLimit,
+										float animalNoiseScale, int animalOctaves, float animalFrequency, float animalNoiseValueLimit, TArray<TSubclassOf<AAnimal>> animalClassList, bool useStaticMesh)
 {
 	CubeSize = cubeSize;
 	Seed = seed;
@@ -79,22 +77,16 @@ void ATerrainTile::Init(int cubeSize, float seed, int scale, int chunkSize, int 
 	TreeOctaves = treeOctaves;
 	TreeFrequency = treeFrequency;
 	TreeNoiseValueLimit = treeNoiseValueLimit;
-	TreeClass = treeClass;
-	TreeMeshList = treeMeshList;
 	GenerateCaves = generateCaves;
 	RockNoiseScale = rockNoiseScale;
 	RockOctaves = rockOctaves;
 	RockFrequency = rockFrequency;
 	RockNoiseValueLimit = rockNoiseValueLimit;
-	RockClass = rockClass;
-	RockMeshList = rockMeshList;
-	WaterLevel = waterLevel;
+	WaterLevel = waterlevel;
 	GrassNoiseScale = grassNoiseScale;
 	GrassOctaves = grassOctaves;
 	GrassFrequency = grassFrequency;
 	GrassNoiseValueLimit = grassNoiseValueLimit;
-	GrassClass = grassClass;
-	GrassMeshList = grassMeshList;
 	AnimalNoiseScale = animalNoiseScale;
 	AnimalOctaves = animalOctaves;
 	AnimalFrequency = animalFrequency;

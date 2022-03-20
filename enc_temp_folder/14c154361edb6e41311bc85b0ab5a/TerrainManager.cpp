@@ -151,9 +151,9 @@ void ATerrainManager::CreateTileArray()
 
 				tile->Init(CubeSize, Seed, Scale, ChunkSize, ChunkHeight, Octaves, SurfaceFrequency, CaveFrequency, NoiseScale,
 					SurfaceLevel, CaveLevel, OverallNoiseScale, SurfaceNoiseScale, GenerateCaves, CaveNoiseScale, TreeNoiseScale,
-					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, TreeClass, TreeMeshList, RockNoiseScale, RockOctaves, RockFrequency,
-					RockNoiseValueLimit, RockClass, RockMeshList, WaterLevel, GrassNoiseScale, GrassOctaves, GrassFrequency, GrassNoiseValueLimit,
-					GrassClass, GrassMeshList, AnimalNoiseScale, AnimalOctaves, AnimalFrequency, AnimalNoiseValueLimit, AnimalClassList, UseStaticMesh);
+					TreeOctaves, TreeFrequency, TreeNoiseValueLimit, RockNoiseScale, RockOctaves, RockFrequency, RockNoiseValueLimit,
+					WaterLevel, GrassNoiseScale, GrassOctaves, GrassFrequency, GrassNoiseValueLimit, AnimalNoiseScale, AnimalOctaves, 
+					AnimalFrequency, AnimalNoiseValueLimit,AnimalClassList,UseStaticMesh);
 
 				TileArray.Push(tile);
 			}

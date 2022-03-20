@@ -37,7 +37,7 @@ public:
 		int ChunkHeight = 1800;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Chunks")
-		int Scale = 50;
+		int Scale = 200;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Chunks")
 		bool UseStaticMesh = false;
@@ -87,12 +87,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Trees")
 		float TreeNoiseValueLimit = 0.3;
 
-	UPROPERTY(EditAnywhere, Category = "Terrain Generation|Trees")
-		TSubclassOf<class ATree> TreeClass;
-
-	UPROPERTY(EditAnywhere, Category = "Terrain Generation|Trees")
-		TArray<UStaticMesh*> TreeMeshList;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Water")
 		float WaterLevel = 900;
 
@@ -129,12 +123,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Grass")
 		float GrassNoiseValueLimit = 0.25;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Grass")
-		TSubclassOf<class AGrass> GrassClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Grass")
-		TArray<UStaticMesh*> GrassMeshList;
-
 	UPROPERTY(EditAnywhere, Category = "Terrain Generation|Rocks")
 		float RockNoiseScale = 5;
 
@@ -146,12 +134,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Terrain Generation|Rocks")
 		float RockNoiseValueLimit = 0.4;
-
-	UPROPERTY(EditAnywhere, Category = "Terrain Generation|Rocks")
-		TSubclassOf<class ARock> RockClass;
-
-	UPROPERTY(EditAnywhere, Category = "Terrain Generation|Rocks")
-		TArray<UStaticMesh*> RockMeshList;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Terrain Generation|Animals")
 		float AnimalNoiseScale = 5;
