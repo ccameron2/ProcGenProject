@@ -26,26 +26,6 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void FindNewLocation();
-
 	UPROPERTY(EditAnywhere)
 		USkeletalMeshComponent* AnimalMesh;
-
-	UPROPERTY(EditAnywhere)
-		int MaxRoamRange = 100;
-
-	UPROPERTY(EditAnywhere)
-		int MovementSpeed = 10;
-
-	UPROPERTY(VisibleAnywhere)
-		int Scale = 200;
-
-	UPROPERTY(VisibleAnywhere)
-		int ChunkHeight = 1800;
-
-	UPROPERTY(VisibleAnywhere)
-		int CaveLevel = 700;
-
-	UPROPERTY(VisibleAnywhere)
-		FVector Location = { 0,0,0 };
 };

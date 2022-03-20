@@ -7,7 +7,6 @@
 #include "Generators/MarchingCubes.h"
 #include "VectorTypes.h"
 #include "GameFramework/Actor.h"
-//#include "Components/RuntimeMeshComponentStatic.h"
 #include "Tree.h"
 #include "Rock.h"
 #include "Grass.h"
@@ -116,9 +115,6 @@ public:
 	UPROPERTY()
 		UStaticMeshComponent* StaticMesh;
 
-	//UPROPERTY(VisibleAnywhere, Category = "ProcMesh")
-	//	URuntimeMeshComponentStatic* RuntimeMesh;
-
 	UPROPERTY(VisibleAnywhere, Category = "Mesh")
 		bool UseStaticMesh = false;
 
@@ -130,6 +126,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Mesh")
 		int GridSizeZ = 1800;
+
+	UPROPERTY(VisibleAnywhere, Category = "Mesh")
+		bool CreateCollision = true;
 
 	UPROPERTY()
 		int32 SectionIndex;
@@ -155,31 +154,9 @@ public:
 	UPROPERTY()
 		TArray <FProcMeshTangent> Tangents;
 
-	UPROPERTY(VisibleAnywhere, Category = "Mesh")
-		bool CreateCollision = true;
-
 	TArray<FIndex3i> MCTriangles;
 
 	TArray<FVector3d> MCVertices;
-
-
-	UPROPERTY()
-		TArray< FVector > WaterVertices;
-
-	UPROPERTY()
-		TArray< int32 > WaterTriangles;
-
-	UPROPERTY()
-		TArray< FVector > WaterNormals;
-
-	UPROPERTY()
-		TArray< FVector2D > WaterUV0;
-
-	UPROPERTY()
-		TArray< FColor > WaterVertexColour;
-
-	UPROPERTY()
-		TArray <FProcMeshTangent> WaterTangents;
 
 	UPROPERTY()
 		TSubclassOf<class ATree> TreeClass;

@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the DescrSiption page of Project Settings.
 #include "TerrainTile.h"
 #include <vector>
-#include "KismetProceduralMeshLibrary.h"
 
 #include "MeshDescription.h"
 #include "MeshDescriptionBuilder.h"
@@ -31,18 +30,12 @@ ATerrainTile::ATerrainTile()
 	ProcMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Procedural Mesh"));
 	SetRootComponent(ProcMesh);
 
-/*	RuntimeMesh = CreateDefaultSubobject<URuntimeMeshComponentStatic>(TEXT("Runtime Mesh"));
-	SetRootComponent(RuntimeMesh)*/;
-
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("smComp"), false);
 	StaticMesh->SetupAttachment(ProcMesh);
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
 	Material = TerrainMaterial.Object;
 	StaticMesh->SetMaterial(0, Material);
-
-	//static ConstructorHelpers::FObjectFinder<UMaterial> WaterMaterial(TEXT("Material'/Game/M_Water_Mesh'"));
-	//WaterMeshMaterial = WaterMaterial.Object;
 
 }
 
@@ -135,12 +128,15 @@ void ATerrainTile::GenerateTerrain()
 			Triangles.Push(int32(MCTriangles[i].C));
 		}
 
-		//Scale the vertices
+		float rand = FMath::RandRange(100, 500);
+		rand = rand / 200;
+		//Scale the vertices and fix z fighting
 		for (int i = 0; i < MCVertices.Num(); i++)
 		{
-			
+
 			MCVertices[i] *= Scale;
 			MCVertices[i] -= GetActorLocation();
+			MCVertices[i].Z += rand;
 		}
 
 		Vertices = TArray<FVector>(MCVertices);
@@ -223,9 +219,6 @@ void ATerrainTile::CreateProcMesh()
 	}
 	else
 	{
-		/*RuntimeMesh->SetupMaterialSlot(0, TEXT("TerrainMat"), Material);
-	    RuntimeMesh->CreateSectionFromComponents(0, sectionCount++, 0, Vertices, Triangles, Normals, UV0, VertexColour, Tangents, ERuntimeMeshUpdateFrequency::Infrequent,CreateCollision);*/
-		
 		ProcMesh->ClearAllMeshSections();
 		ProcMesh->SetMaterial(0, Material);
 		ProcMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, ProcVertexColour, Tangents, CreateCollision);
@@ -243,22 +236,12 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	FVector3d noiseInput = (perlinInput + FVector{ Seed,Seed,0 }) / NoiseScale;
 
 	float density = ( -noiseInput.Z / OverallNoiseScale ) + 1;
-
-	//Add 3D noise partially
-	//density += FractalBrownianMotion(FVector(noiseInput) / 5, 6,0.5);
 	
 	//Add 2D noise
 	density += FractalBrownianMotion(FVector(noiseInput.X / SurfaceNoiseScale, noiseInput.Y / SurfaceNoiseScale, 0), Octaves, SurfaceFrequency); //14
 
 	float density2 = FractalBrownianMotion(FVector(noiseInput / CaveNoiseScale), Octaves, CaveFrequency);
 
-	//if (FractalBrownianMotion(FVector{ float(noiseInput.X),float(noiseInput.Y),0 } / 8, 4, 0.8) > 0.4)
-	//{
-	//	if (perlinInput.Z >= SurfaceLevel * Scale)
-	//	{
-	//		return density - 0.2;
-	//	}
-	//}
 
 	if (GenerateCaves)
 	{
@@ -267,49 +250,47 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 			return 1;
 		}
 
-		if (perlinInput.Z >= SurfaceLevel)//640
+		if (perlinInput.Z >= SurfaceLevel)
 		{
 			return density;
 		}
-		else if (perlinInput.Z < CaveLevel)//384
+		else if (perlinInput.Z < CaveLevel)
 		{
 			return density2;
 		}
 		else
 		{
-			return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
+			return FMath::Lerp(density2 + 0.2f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
 		}
 		
 	}
 	else
 	{
-		if (perlinInput.Z == CaveLevel)//384
+		if (perlinInput.Z == CaveLevel)
 		{
 			return 1;
 		}
 
-		if (perlinInput.Z >= SurfaceLevel)//640
+		if (perlinInput.Z >= SurfaceLevel)
 		{
 			return density;
 		}
-		else if (perlinInput.Z < CaveLevel)//384
+		else if (perlinInput.Z < CaveLevel)
 		{
 			return -1;
 		}
 		else
 		{
-			return FMath::Lerp(density2 + 0.1f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel)); //0.1
+			return FMath::Lerp(density2 + 0.1f, density, (perlinInput.Z - CaveLevel) / (SurfaceLevel - CaveLevel));
 		}
 	}
-	
 
 	return 1;
-
 }
 
 float ATerrainTile::FractalBrownianMotion(FVector fractalInput, float octaves, float frequency)
 {
-	//The book of shaders
+	// The book of shaders
 	float result = 0;
 	float amplitude = 0.5;
 	float lacunarity = 2.0;
@@ -357,13 +338,21 @@ void ATerrainTile::CalculateNormals()
 			if (triangle < 0)
 			{
 				continue;
-			}			
+			}
+
+			// Get vertices from triangle index
 			auto A = Vertices[MCTriangles[triangle].A];
 			auto B = Vertices[MCTriangles[triangle].B];
 			auto C = Vertices[MCTriangles[triangle].C];
+
+			//Calculate edges
 			auto E1 = A - B;
 			auto E2 = C - B;
+
+			//Calculate normal with cross product
 			auto Normal = E1 ^ E2;
+
+			// Normalise result and add to normals array
 			Normal.Normalize();
 			Normals[i] += Normal;
 		}
@@ -375,6 +364,39 @@ void ATerrainTile::CalculateNormals()
 		normal.Normalize();
 	}
 	
+}
+
+void ATerrainTile::RemoveTrees()
+{
+	for (auto& tree : TreeList)
+	{
+		tree->Destroy();
+	}
+}
+
+
+void ATerrainTile::RemoveRocks()
+{
+	for (auto& rock : RockList)
+	{
+		rock->Destroy();
+	}
+}
+
+void ATerrainTile::RemoveGrass()
+{
+	for (auto& grass : GrassList)
+	{
+		grass->Destroy();
+	}
+}
+
+void ATerrainTile::RemoveAnimals()
+{
+	for (auto& animal : AnimalList)
+	{
+		animal->Destroy();
+	}
 }
 
 void ATerrainTile::CreateTrees()
@@ -471,30 +493,7 @@ void ATerrainTile::CreateGrass()
 	}
 }
 
-void ATerrainTile::RemoveTrees()
-{
-	for (auto& tree : TreeList)
-	{
-		tree->Destroy();
-	}
-}
 
-
-void ATerrainTile::RemoveRocks()
-{
-	for (auto& rock : RockList)
-	{
-		rock->Destroy();
-	}
-}
-
-void ATerrainTile::RemoveGrass()
-{
-	for (auto& grass : GrassList)
-	{
-		grass->Destroy();
-	}
-}
 
 void ATerrainTile::CreateRocks()
 {
@@ -574,13 +573,7 @@ void ATerrainTile::CreateAnimals()
 	}
 }
 
-void ATerrainTile::RemoveAnimals()
-{
-	for (auto& animal : AnimalList)
-	{
-		animal->Destroy();
-	}
-}
+
 
 // Called every frame
 void ATerrainTile::Tick(float DeltaTime)
