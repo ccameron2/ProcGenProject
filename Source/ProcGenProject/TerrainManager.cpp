@@ -210,18 +210,22 @@ void ATerrainManager::CreateWaterMesh()
 	{
 		for (int j = -((RenderDistance + 1) * ChunkSize); j < ((RenderDistance + 1) * ChunkSize); j += WaterStepSize)
 		{
-			//		
+			// Raycast from the chunkheight to the cave level
 			FHitResult Hit;
 			FVector Start = { float((PlayerPosition.X) + (i * Scale)),float((PlayerPosition.Y) + (j * Scale)), float(ChunkHeight * Scale) };
 			FVector End = { float((PlayerPosition.X) + (i * Scale)),float((PlayerPosition.Y) + (j * Scale)), float(CaveLevel * Scale) };
 			ECollisionChannel Channel = ECC_Visibility;
 			FCollisionQueryParams Params;
 			GetWorld()->LineTraceSingleByChannel(Hit, Start, End, Channel, Params);
+
+			// Save hit location
 			auto Location = Hit.Location;
 			if (Hit.Location != FVector{ 0, 0, 0 })
 			{
+				// If location is below water level
 				if (Hit.Location.Z < (WaterLevel)*Scale)
 				{
+					// Place water vertex at water level
 					Location.Z = (WaterLevel)*Scale;
 					WaterVertices.Push(Location);
 				}
