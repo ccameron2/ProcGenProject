@@ -288,7 +288,7 @@ double ATerrainTile::PerlinWrapper(FVector3<double> perlinInput)
 	// Scale noise input
 	FVector3d noiseInput = (perlinInput + FVector{ Seed,Seed,0 }) / NoiseScale;
 
-	//
+	// Divide the world to create surface
 	float density = ( -noiseInput.Z / OverallNoiseScale ) + 1;
 	
 	// Sample 2D noise for surface
