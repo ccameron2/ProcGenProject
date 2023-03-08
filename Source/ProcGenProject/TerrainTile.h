@@ -198,7 +198,7 @@ public:
 	TArray<ATree*> TreeList;
 
 	// Class to use when placing rocks
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 		TSubclassOf<class ARock> RockClass;
 
 	// Meshes to use when placing rocks
@@ -228,5 +228,7 @@ public:
 	// List of animals
 	UPROPERTY()
 	TArray<AAnimal*> AnimalList;
+
+	FVector2D CalculateUV(const FVector& normal);
 
 };

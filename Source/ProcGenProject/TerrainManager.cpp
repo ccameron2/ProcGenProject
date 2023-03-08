@@ -8,6 +8,7 @@
 #include "MeshDescription.h"
 #include "MeshDescriptionBuilder.h"
 #include "StaticMeshAttributes.h"
+#include "KismetProceduralMeshLibrary.h"
 
 // Sets default values
 ATerrainManager::ATerrainManager()
@@ -20,7 +21,82 @@ ATerrainManager::ATerrainManager()
 	WaterMesh->SetupAttachment(RootComponent);
 
 	// Set material set in blueprint
+	//WaterMesh->SetMaterial(0, WaterMeshMaterial);
+
+	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Water_Master'"));
+	WaterMeshMaterial = TerrainMaterial.Object;
 	WaterMesh->SetMaterial(0, WaterMeshMaterial);
+
+	LoadModels();
+}
+
+void ATerrainManager::LoadModels()
+{
+	// Load asset and store in object
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset1(TEXT("StaticMesh'/Game/LowPolyAssets/CommonTree_1'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset2(TEXT("StaticMesh'/Game/LowPolyAssets/CommonTree_2'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset3(TEXT("StaticMesh'/Game/LowPolyAssets/CommonTree_3'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset4(TEXT("StaticMesh'/Game/LowPolyAssets/CommonTree_4'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset5(TEXT("StaticMesh'/Game/LowPolyAssets/CommonTree_5'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset6(TEXT("StaticMesh'/Game/LowPolyAssets/TreeStump'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset7(TEXT("StaticMesh'/Game/LowPolyAssets/Bush_1'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset8(TEXT("StaticMesh'/Game/LowPolyAssets/BushBerries_1'"));
+
+	// Pull mesh object from objectfinder and set to object created above
+	TreeMeshList.Push(MeshAsset1.Object);
+	TreeMeshList.Push(MeshAsset2.Object);
+	TreeMeshList.Push(MeshAsset3.Object);
+	TreeMeshList.Push(MeshAsset4.Object);
+	TreeMeshList.Push(MeshAsset5.Object);
+	TreeMeshList.Push(MeshAsset6.Object);
+	TreeMeshList.Push(MeshAsset7.Object);
+	TreeMeshList.Push(MeshAsset8.Object);
+
+	// Load asset and store in object
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset9(TEXT("StaticMesh'/Game/LowPolyAssets/Plant_1'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset10(TEXT("StaticMesh'/Game/LowPolyAssets/Plant_2'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset11(TEXT("StaticMesh'/Game/LowPolyAssets/Plant_3'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset12(TEXT("StaticMesh'/Game/LowPolyAssets/Plant_4'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset13(TEXT("StaticMesh'/Game/LowPolyAssets/Plant_5'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset14(TEXT("StaticMesh'/Game/LowPolyAssets/Wheat'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset16(TEXT("StaticMesh'/Game/LowPolyAssets/Grass'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset25(TEXT("StaticMesh'/Game/LowPolyAssets/Grass_2'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset26(TEXT("StaticMesh'/Game/LowPolyAssets/Flowers'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset15(TEXT("StaticMesh'/Game/LowPolyAssets/Lilypad'"));
+
+
+	// Pull mesh object from objectfinder and set to object created above
+	GrassMeshList.Push( MeshAsset9.Object);
+	GrassMeshList.Push( MeshAsset10.Object);
+	GrassMeshList.Push( MeshAsset11.Object);
+	GrassMeshList.Push( MeshAsset12.Object);
+	GrassMeshList.Push( MeshAsset13.Object);
+	GrassMeshList.Push( MeshAsset14.Object);
+	GrassMeshList.Push( MeshAsset16.Object);
+	GrassMeshList.Push(MeshAsset25.Object);
+	GrassMeshList.Push(MeshAsset26.Object);
+	GrassMeshList.Push(MeshAsset15.Object); // Keep lilypad on end
+
+
+	// Load asset and store in object
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset17(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_1'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset18(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_2'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset19(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_Moss_3'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset20(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_4'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset21(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_Moss_5'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset22(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_6'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset23(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_7'"));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset24(TEXT("StaticMesh'/Game/LowPolyAssets/Rock_Moss_1'"));
+
+	// Pull mesh object from objectfinder and set to object created above
+	RockMeshList.Push(MeshAsset17.Object);
+	RockMeshList.Push(MeshAsset18.Object);
+	RockMeshList.Push(MeshAsset19.Object);
+	RockMeshList.Push(MeshAsset20.Object);
+	RockMeshList.Push(MeshAsset21.Object);
+	RockMeshList.Push(MeshAsset22.Object);
+	RockMeshList.Push(MeshAsset23.Object);
+	RockMeshList.Push(MeshAsset24.Object);
 }
 
 // Called when the game starts or when spawned
@@ -273,7 +349,7 @@ void ATerrainManager::CreateWaterMesh()
 		{
 			// Use external library to triangulate
 			delaunator::Delaunator d(coords);
-
+			
 			// Push resultant triangles into triangles list
 			for (auto& triangle : d.triangles)
 			{
@@ -282,9 +358,42 @@ void ATerrainManager::CreateWaterMesh()
 		}
 	}
 
+	for (auto& vertex : WaterVertices)
+	{
+		vertex.Z += 50 * FMath::PerlinNoise2D(FVector2D{ vertex.X,vertex.Y } / 100);
+	}
+
+	CalculateNormals();
+
 	// Create mesh section with Vertices and Triangles
 	WaterMesh->CreateMeshSection(0, WaterVertices, WaterTriangles, WaterNormals, WaterUV0, WaterVertexColour, WaterTangents, false);
 
 	// Set material set in blueprint
 	WaterMesh->SetMaterial(0, WaterMeshMaterial);
+}
+
+void ATerrainManager::CalculateNormals()
+{
+	WaterNormals.Init({ 0,0,0 }, WaterVertices.Num());
+
+	for (int i = 0; i < WaterTriangles.Num() - 3; i += 3)
+	{
+		auto a = WaterVertices[WaterTriangles[i]];
+		auto b = WaterVertices[WaterTriangles[i + 1]];
+		auto c = WaterVertices[WaterTriangles[i + 2]];
+
+		auto v1 = a - b;
+		auto v2 = c - b;
+		auto n = v1 ^ v2;
+		n.Normalize();
+
+		WaterNormals[WaterTriangles[i]] += n;
+		WaterNormals[WaterTriangles[i + 1]] += n;
+		WaterNormals[WaterTriangles[i + 2]] += n;
+	}
+
+	for (auto& normal : WaterNormals)
+	{
+		normal.Normalize();
+	}
 }

@@ -205,6 +205,7 @@ public:
 
 	// Create water
 	void CreateWaterMesh();
+	void CalculateNormals();
 	bool UpdateWater = false;
 
 	// Water variables for mesh generation
@@ -243,6 +244,8 @@ public:
 
 	// Multithreading worker for terrain generation
 	std::unique_ptr<FTerrainWorker> terrainWorker;
+
+	void LoadModels();
 
 protected:
 	// Called when the game starts or when spawned

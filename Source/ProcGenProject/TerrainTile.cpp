@@ -36,7 +36,7 @@ ATerrainTile::ATerrainTile()
 	StaticMesh->SetupAttachment(ProcMesh);
 
 	// Get material by name from editor and set as mesh material
-	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Mesh'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial> TerrainMaterial(TEXT("Material'/Game/M_Terrain_Master'"));
 	Material = TerrainMaterial.Object;
 	StaticMesh->SetMaterial(0, Material);
 
@@ -173,6 +173,9 @@ void ATerrainTile::GenerateTerrain()
 		
 		// Calculate normals for mesh
 		CalculateNormals();
+
+		//for (auto& normal : Normals){ UV0.Push(CalculateUV(normal)); }
+
 	}
 }
 
@@ -503,11 +506,15 @@ void ATerrainTile::CreateTrees()
 							// Set owner of tree as this tile
 							tree->SetOwner(this);
 
+							auto meshNum = FMath::RandRange(0, TreeMeshList.Num() - 1);
+							if (meshNum >= GrassMeshList.Num() - 3) { tree->SetActorScale3D(FVector{ float(Scale) / 20 }); }
+							else { tree->SetActorScale3D(FVector{ float(Scale) / 5 }); }
+
 							// Scale the tree
 							tree->SetActorScale3D(FVector{ float(Scale / 5), float(Scale / 5), float(Scale / 5) });
 							
 							// Pick a random mesh to use from list
-							tree->TreeMesh->SetStaticMesh(TreeMeshList[FMath::RandRange(0, TreeMeshList.Num() - 1)]);
+							tree->TreeMesh->SetStaticMesh(TreeMeshList[meshNum]);
 
 							// Push tree onto tree list
 							TreeList.Push(tree);
@@ -710,7 +717,51 @@ void ATerrainTile::CreateAnimals()
 	}
 }
 
-
+FVector2D ATerrainTile::CalculateUV(const FVector& normal)
+{
+	FVector2D uv;
+	const float& x = normal.X;
+	const float& y = normal.Y;
+	const float& z = normal.Z;
+	float normalisedX = 0;
+	float normalisedZ = -1;
+	if (((x * x) + (z * z)) > 0)
+	{
+		normalisedX = sqrt((x * x) / ((x * x) + (z * z)));
+		if (x < 0)
+		{
+			normalisedX = -normalisedX;
+		}
+		normalisedZ = sqrt((z * z) / ((x * x) + (z * z)));
+		if (z < 0)
+		{
+			normalisedZ = -normalisedZ;
+		}
+	}
+	if (normalisedZ == 0)
+	{
+		uv.X = ((normalisedX * PI) / 2);
+	}
+	else
+	{
+		uv.X = atan(normalisedX / normalisedZ);
+		if (normalisedX < 0)
+		{
+			uv.X = PI - uv.X;
+		}
+		if (normalisedZ < 0)
+		{
+			uv.X += PI;
+		}
+	}
+	if (uv.X < 0)
+	{
+		uv.X += 2 * PI;
+	}
+	uv.X /= 2 * PI;
+	uv.Y = (-y + 1) / 2;
+	return uv;
+}
 
 // Called every frame
 void ATerrainTile::Tick(float DeltaTime)
