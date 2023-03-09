@@ -567,7 +567,7 @@ void ATerrainTile::CreateGrass()
 							grass->SetOwner(this);
 
 							// Scale the grass
-							grass->SetActorScale3D(FVector{ float(Scale / 30), float(Scale / 30), float(Scale / 30) });
+							grass->SetActorScale3D(FVector{ float(Scale / 20), float(Scale / 20), float(Scale / 20) });
 
 							// Pick a random mesh to use from list
 							grass->GrassMesh->SetStaticMesh(GrassMeshList[FMath::RandRange(0, GrassMeshList.Num() - 2)]);
